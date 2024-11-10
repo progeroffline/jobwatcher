@@ -1,0 +1,7 @@
+aiogram
+sqlalchemy
+aiogram_i18n
+fluent.runtime
+alembic
+psycopg
+logzero
