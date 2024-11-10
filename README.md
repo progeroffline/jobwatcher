@@ -1,104 +1,94 @@
-# Aiogram Bot Template
+# JobWatcher
 
-A structured template for building Telegram bots using the `aiogram` library and PostgreSQL. This template includes essential modules and configurations for easy setup and scalable bot development.
+*[English](README.md) | [Русский](README_RU.md)*
+
+A Telegram bot for automatically collecting and publishing job vacancies from various sources. This bot searches for jobs in art, design, and other creative industries, posting them in a Telegram channel and notifying users about new opportunities based on their preferences.
 
 ## Features
 
-- **Database Integration**: Supports PostgreSQL with migrations managed by Alembic.
-- **Modular Design**: Organized directories for handlers, middlewares, routers, and utilities.
-- **Localization Support**: Pre-configured localization for multi-language bots.
-- **Dependency Injection**: Simplifies passing dependencies within the bot.
-- **Customizable Keyboards and Filters**: Easily set up custom keyboards and filters for user interaction.
+1. **Job Search and Filtering**:
+   - Collects job data from various websites and APIs (see the list of sources below).
+   - Filters vacancies by region (Ukraine, CIS countries, Poland, Canada).
+   - Filters by categories, such as art, design, and creative industries.
 
-## Project Structure
+2. **Analysis and Sorting**:
+   - Removes duplicate job postings.
+   - Filters only fresh vacancies.
+   - Normalizes job data to a consistent format (title, company, description, requirements, contact information).
 
-```
-src/
-├── alembic/                  # Directory for Alembic migrations
-├── bot/
-│   ├── database/             # Database models and connections
-│   ├── filters/              # Custom filters for message handling
-│   ├── keyboards/            # Inline and reply keyboards
-│   ├── locales/              # Localization files (e.g., Russian language)
-│   │   └── ru/LC_MESSAGES/   # Example locale (Russian)
-│   ├── middlewares/          # Middleware components for logging, etc.
-│   ├── repositories/         # Data access and repository pattern implementation
-│   ├── routers/              # Routers to organize handlers
-│   ├── utils/                # Utility functions and helpers
-│   ├── __init__.py           # Initialization file for the bot module
-│   ├── __main__.py           # Main bot entry point
-│   ├── config_reader.py      # Configuration file for reading environment variables
-│   ├── dependencies.py       # Dependency management and injection
-│   └── ui_commands.py        # Command UI setup
-├── alembic.ini               # Alembic configuration file
-├── .gitignore                # Git ignore file
-├── LICENSE                   # License information
-├── README.md                 # Project documentation
-├── env-dist                  # Example .env file
-└── requirements.txt          # Python dependencies
-```
+3. **Publishing to Telegram**:
+   - Automatically publishes new job listings to main and additional channels: [ArtLeads](https://t.me/artleads) and [Distant Job](https://t.me/distant_job).
+   - Periodically updates the channels (up to 10 times per day).
 
-## Setup Instructions
+4. **Custom User Notifications**:
+   - Searches for jobs based on user queries, including keyword and skill filters (e.g., "illustrator," "UI/UX designer").
+   
+5. **Bot Management**:
+   - Admin panel for bot management through commands.
+   - Logs bot activity (published jobs, processed requests).
 
-1. **Clone the Repository**
+6. **User Support**:
+   - Subscription to notifications about new vacancies by selected categories.
+   - `/help` command for bot usage instructions.
+
+7. **Integration and Updates**:
+   - API support for job sites (where available).
+   - Adapts to changes on job listing websites.
+
+## Installation
+
+1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/aiogram-bot-template.git
-   cd aiogram-bot-template
+   git clone https://github.com/yourusername/job-vacancy-bot.git
+   cd job-vacancy-bot
    ```
 
-2. **Set Up the Virtual Environment**
+2. **Set Up a Virtual Environment and Install Dependencies**:
    ```bash
    python3 -m venv venv
    source venv/bin/activate  # For Linux/Mac
    venv\Scripts\activate     # For Windows
-   ```
-
-3. **Install Dependencies**
-   ```bash
    pip install -r requirements.txt
    ```
 
-4. **Configure Environment Variables**
-   - Create a `.env` file by copying `env-dist`:
+3. **Configure Environment Variables**:
+   - Copy `env-dist` to `.env`:
      ```bash
      cp env-dist .env
      ```
-   - Update `.env` with your Telegram bot token and database connection details:
-     ```
-     BOT_TOKEN=your-telegram-bot-token
-     DATABASE_URL=postgresql+asyncpg://user:password@localhost/dbname
-     ```
+   - Fill in `.env` with your data, including `BOT_TOKEN`, `DATABASE_URL`, and other necessary settings.
 
-5. **Run Database Migrations**
+4. **Run Database Migrations**:
    ```bash
    alembic upgrade head
    ```
 
-6. **Start the Bot**
+5. **Start the Bot**:
    ```bash
    python src/bot/__main__.py
    ```
 
-## Key Components
+## Job Sources
 
-- **Database**: Located in `bot/database/`, with models and async connection handling.
-- **Filters**: Custom filters for filtering incoming messages.
-- **Keyboards**: Contains inline and reply keyboard setups.
-- **Localization**: The `locales/` directory includes localization support, e.g., Russian language in `locales/ru/LC_MESSAGES/`.
-- **Middlewares**: Middlewares for logging or preprocessing data.
-- **Routers**: Organized message handlers for managing different bot commands and responses.
-- **Utils**: Helper functions used throughout the bot codebase.
+The bot collects job listings from the following websites (this list may change based on configuration):
+- [Source 1](https://example.com)
+- [Source 2](https://example.com)
+- [Source 3](https://example.com)
+- [Source 4](https://example.com)
 
-## Alembic for Migrations
+*The full list and source configurations are available in the configuration file.*
 
-The project uses Alembic for database migrations. To generate a new migration after modifying models, run:
-```bash
-alembic revision --autogenerate -m "Migration message"
-```
+## Key Commands
+
+- `/start` — Starts the bot and displays a welcome message.
+- `/help` — Provides information about bot capabilities and available commands.
+- `/subscribe [category]` — Subscribes to notifications for new jobs in the chosen category.
+- `/unsubscribe [category]` — Unsubscribes from notifications.
+- `/search [keywords]` — Searches for jobs based on specified keywords.
 
 ## Contributing
 
-Pull requests and feature suggestions are welcome. Please fork the repository, create a new branch, and submit a pull request.
+New ideas and improvements are welcome. Feel free to open pull requests or create new issues.
 
 ## License
 
