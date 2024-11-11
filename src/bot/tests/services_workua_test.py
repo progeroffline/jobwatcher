@@ -4,5 +4,7 @@ from bot.services.workua.parser import WorkUAParser
 
 async def test():
     service = WorkUAParser()
-    response = await service.search("")
-    print(response)
+
+    for i in range(10):
+        response = await service.search("developer", i + 1)
+        print(response)
