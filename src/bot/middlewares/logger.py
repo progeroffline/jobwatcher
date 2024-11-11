@@ -12,7 +12,6 @@ class LoggingMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        print(event)
         user_id = event.message.from_user.id if event.message else "Anonymous"  # type: ignore
         user_name = event.message.from_user.username if event.message else "No username"  # type: ignore
         chat_id = event.message.chat.id if event.message else "No chat"  # type: ignore

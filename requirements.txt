@@ -5,3 +5,5 @@ fluent.runtime
 alembic
 psycopg
 logzero
+pydantic_settings
+greenlet
