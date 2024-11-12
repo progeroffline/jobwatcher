@@ -6,7 +6,6 @@ from aiogram.enums import ParseMode
 from aiogram.utils.callback_answer import CallbackAnswerMiddleware
 
 from bot.config_reader import settings
-from bot.middlewares.logger import LoggingMiddleware
 from bot.routers import start, admin
 from bot.ui_commands import set_ui_commands
 from bot.dependencies import (
@@ -28,7 +27,6 @@ async def main():
     dp.update.middleware(session_provider)
     dp.update.middleware(repo_provider)
 
-    dp.update.middleware(LoggingMiddleware())
     dp.callback_query.middleware(CallbackAnswerMiddleware())
 
     dp.message.middleware(session_provider)
