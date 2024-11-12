@@ -35,3 +35,15 @@ class JobVacancy(ModelPrettyPrint):
     salary_period: Mapped[str] = mapped_column(String, default="")
 
     url: Mapped[str] = mapped_column(String, default="")
+
+
+class Channel(ModelPrettyPrint):
+    __tablename__ = "channels"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        unique=True,
+        autoincrement=False,
+    )
+    post_n_every_hours: Mapped[int] = mapped_column(Integer, default=1)

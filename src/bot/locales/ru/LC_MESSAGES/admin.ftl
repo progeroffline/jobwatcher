@@ -1,1 +1,5 @@
-admin_menu = Admin menu
+admin_menu = Вы в админ меню вот доступные команды
+    /channels - Список каналов в которых публикуются данные
+    /channels_remove - Удалить канал
+    /channels_add - Добавить канал
+    /channels_time - Установить время постинга в каналах
