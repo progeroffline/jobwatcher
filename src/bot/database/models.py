@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, BigInteger, Integer, String, Text
+from sqlalchemy import Boolean, BigInteger, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from bot.database.abstracts import ModelPrettyPrint
 
