@@ -1,16 +1,36 @@
 from typing import Sequence
 from sqlalchemy import select, update
 from bot.database.models import JobVacancy
+from bot.database.models.job_vacancy import JobVacancyLocation
 from bot.repositories.abstracts import BaseRepository
 
 
 class JobVacancyRepository(BaseRepository):
-    async def create(self, **kwargs) -> JobVacancy:
-        job_vacancy = await self.get(id=kwargs["id"])
+    async def create_location(self, **kwargs) -> JobVacancyLocation:
+        job_vacancy_location = JobVacancyLocation(**kwargs)
+        self._session.add(job_vacancy_location)
+        await self._session.commit()
+        return job_vacancy_location
+
+    async def get_location(self, **kwargs) -> JobVacancyLocation:
+        stmt = select(JobVacancyLocation).filter_by(**kwargs)
+        result = (await self._session.execute(stmt)).scalar_one_or_none()
+        if result is None:
+            return await self.create_location(**kwargs)
+        return result
+
+    async def create(
+        self,
+        id: str,
+        locations: list[dict[str, str]],
+        **kwargs,
+    ) -> JobVacancy:
+        locations = [await self.get_location(**location) for location in locations]
+        job_vacancy = await self.get(id=id)
         if job_vacancy is not None:
             return job_vacancy  # Return value if it exists in db
 
-        job_vacancy = JobVacancy(**kwargs)
+        job_vacancy = JobVacancy(id=id, locations=locations, **kwargs)
         self._session.add(job_vacancy)
         await self._session.commit()
         return job_vacancy

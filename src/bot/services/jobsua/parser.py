@@ -33,7 +33,7 @@ class JobsUAParser:
         self,
         query: str = "",
         page: int = 1,
-    ) -> list[dict[str, str | int]]:
+    ) -> list[dict[str, str | int | list[dict[str, str]]]]:
         response = await self.make_get_request(
             url=f"{JobsUAEndpoints.SEARCH}-{query}/page-{page}",
         )
@@ -62,6 +62,17 @@ class JobsUAParser:
                 salary_tag.select_one("i").text.replace(".", "") if salary_tag else ""  # type: ignore
             )
             url = title_tag.get("href", "")
+            locations = [
+                {
+                    "continent": "Europe",
+                    "country": "Ukraine",
+                    "city": vacancy.select_one(
+                        ".b-vacancy__tech .b-vacancy__tech__item a"
+                    )
+                    .text.split("(")[0]  # type: ignore
+                    .strip(),
+                }
+            ]
 
             result.append(
                 {
@@ -74,6 +85,7 @@ class JobsUAParser:
                     "salary_currency": salary_currency,
                     "salary_period": "month",
                     "url": url,
+                    "locations": locations,
                 }
             )
 

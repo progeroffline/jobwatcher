@@ -33,7 +33,7 @@ class WorkUAParser:
         self,
         query: str = "",
         page: int = 1,
-    ) -> list[dict[str, str | int]]:
+    ) -> list[dict[str, str | int | list[dict[str, str]]]]:
         response = await self.make_get_request(
             url=WorkUAEndpoints.SEARCH,
             params={"search": query, "page": page},
@@ -66,6 +66,15 @@ class WorkUAParser:
                     "salary_currency": salary_currency,
                     "salary_period": "month",
                     "url": f"https://{self.domain}/jobs/{vacancy.select_one('div.saved-jobs').get('data-id')}",  # type: ignore
+                    "locations": [
+                        {
+                            "continent": "Europe",
+                            "country": "Ukraine",
+                            "city": vacancy.select(".card .mt-xs span[class='']")[-1]
+                            .text.replace(",", "")  # type: ignore
+                            .split("шукаємо у")[0],  # type: ignore
+                        }
+                    ],
                 }
             )
 

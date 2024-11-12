@@ -1,3 +1,4 @@
+import re
 import httpx
 from bs4 import BeautifulSoup
 from .endpoints import BelmetaEndpoints
@@ -32,7 +33,7 @@ class BelmetaParser:
         self,
         query: str = "",
         page: int = 1,
-    ) -> list[dict[str, str | int]]:
+    ) -> list[dict[str, str | int | list[dict[str, str]]]]:
         response = await self.make_get_request(
             url=BelmetaEndpoints.SEARCH,
             params={"q": query, "page": page},
@@ -53,12 +54,29 @@ class BelmetaParser:
                     "id": "belmeta" + str(vacancy.get("data-id")),
                     "title": vacancy.select_one("a.job-title").text,  # type: ignore
                     "company": vacancy.select_one("div.job-data.company").text,  # type: ignore
-                    "description": vacancy.select_one("div.desc").text.strip(),  # type: ignore
+                    "description": vacancy.select_one("div.desc")
+                    .text.strip()  # type: ignore
+                    .replace("\xa0", "")
+                    .replace("\r\n", ""),
                     "min_salary": min_salary,
                     "max_salary": max_salary,
                     "salary_currency": salary_currency,
                     "salary_period": "month",
                     "url": f"https://{self.domain}/viewjob?id={vacancy.get('data-id')}",
+                    "locations": [
+                        {
+                            "continent": "Europe",
+                            "country": "Belarus",
+                            "city": city.strip(),
+                        }
+                        for city in re.sub(
+                            r"\s+",
+                            " ",
+                            vacancy.select_one("div.job-data.region")
+                            .text.replace("в других городах", "")  # type: ignore
+                            .strip(),
+                        ).split(";")
+                    ],
                 }
             )
         return result

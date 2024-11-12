@@ -1,3 +1,4 @@
+import re
 from typing import Any
 import httpx
 from .endpoints import RabotaUAEndpoints
@@ -29,7 +30,7 @@ class RabotaUAParser:
         self,
         query: str = "",
         page: int = 1,
-    ) -> list[dict[str, str | int]]:
+    ) -> list[dict[str, str | int | list[dict[str, str]]]]:
         response = await self.make_post_request(
             url=RabotaUAEndpoints.SEARCH,
             params={"q": "getPublishedVacanciesList"},
@@ -81,12 +82,19 @@ class RabotaUAParser:
                 "company": vacancy["company"]["name"]
                 if vacancy["company"] is not None
                 else "Анонiмна компанiя",
-                "description": vacancy["description"].strip(),
+                "description": vacancy["description"].strip().replace("\xa0", ""),
                 "min_salary": vacancy["salary"]["amountFrom"],
                 "max_salary": vacancy["salary"]["amountFrom"],
                 "salary_currency": "грн",
                 "salary_period": "month",
                 "url": f"https://{self.domain}/company{vacancy['company']['id'] if vacancy['company'] is not None else 0}/vacancy{vacancy['id']}",
+                "locations": [
+                    {
+                        "continent": "Europe",
+                        "country": "Ukraine",
+                        "city": vacancy["city"]["name"].split(",")[0],
+                    }
+                ],
             }
             for vacancy in response["data"]["publishedVacancies"]["items"]
         ]

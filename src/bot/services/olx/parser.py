@@ -1,4 +1,5 @@
 from typing import Any
+import bleach
 import httpx
 from .endpoints import OlxEndpoints
 
@@ -11,6 +12,16 @@ class OlxParser:
                 "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:132.0) Gecko/20100101 Firefox/132.0",
                 "Accept": "*/*",
             }
+        )
+
+    def remove_supported_html_tags(self, html: str) -> str:
+        supported_tags = ["b", "i", "u", "a", "code", "pre"]
+        allowed_attributes = {"a": ["href"]}
+        return bleach.clean(
+            html,
+            tags=supported_tags,
+            attributes=allowed_attributes,
+            strip=True,
         )
 
     async def make_get_request(
@@ -28,7 +39,7 @@ class OlxParser:
         query: str = "",
         page: int = 1,
         limit: int = 40,
-    ) -> list[dict[str, str | int]]:
+    ) -> list[dict[str, str | int | list[dict[str, str]]]]:
         response = await self.make_get_request(
             url=OlxEndpoints.SEARCH,
             params={
@@ -53,12 +64,21 @@ class OlxParser:
                     "id": "olx" + str(vacancy["id"]),
                     "title": vacancy["title"],
                     "company": "",
-                    "description": vacancy["description"].strip(),
+                    "description": self.remove_supported_html_tags(
+                        vacancy["description"].strip()
+                    ),
                     "min_salary": salary["from"],
                     "max_salary": salary["to"],
                     "salary_currency": salary["currency"],
                     "salary_period": salary["type"],
                     "url": vacancy["url"],
+                    "locations": [
+                        {
+                            "continent": "Europe",
+                            "country": "Ukraine",
+                            "city": vacancy["location"]["city"]["name"],
+                        }
+                    ],
                 }
             )
 
