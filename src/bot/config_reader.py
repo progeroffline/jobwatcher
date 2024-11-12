@@ -19,6 +19,8 @@ class Settings(BaseSettings):
         Path(__file__).resolve().parent.joinpath("logs", "bot.log")
     )
 
+    noitify_users_about_new_vacancies: bool = True
+
     class Config:
         env_file = Path(__file__).resolve().parent.parent.parent.joinpath(".env")
         env_file_encoding = "utf-8"
