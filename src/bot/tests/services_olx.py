@@ -6,5 +6,5 @@ async def test():
     service = OlxParser()
 
     for i in range(10):
-        response = await service.search("developer", page=i + 1)
+        response = await service.search(page=i + 1)
         print(response)

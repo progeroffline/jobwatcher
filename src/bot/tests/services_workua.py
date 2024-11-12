@@ -6,5 +6,5 @@ async def test():
     service = WorkUAParser()
 
     for i in range(10):
-        response = await service.search("developer", i + 1)
+        response = await service.search(page=i + 1)
         print(response)
