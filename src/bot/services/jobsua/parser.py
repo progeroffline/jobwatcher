@@ -29,7 +29,11 @@ class JobsUAParser:
             return await self.make_get_request(url, params)
         return ""
 
-    async def search(self, query: str, page: int = 1) -> list[dict[str, str | int]]:
+    async def search(
+        self,
+        query: str = "",
+        page: int = 1,
+    ) -> list[dict[str, str | int]]:
         response = await self.make_get_request(
             url=f"{JobsUAEndpoints.SEARCH}-{query}/page-{page}",
         )
@@ -61,7 +65,7 @@ class JobsUAParser:
 
             result.append(
                 {
-                    "id": vacancy_id,
+                    "id": "jobsua" + str(vacancy_id),
                     "title": title,
                     "company": company,
                     "description": "",

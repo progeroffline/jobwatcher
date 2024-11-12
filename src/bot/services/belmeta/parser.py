@@ -50,7 +50,7 @@ class BelmetaParser:
 
             result.append(
                 {
-                    "id": vacancy.get("data-id"),
+                    "id": "belmeta" + str(vacancy.get("data-id")),
                     "title": vacancy.select_one("a.job-title").text,  # type: ignore
                     "company": vacancy.select_one("div.job-data.company").text,  # type: ignore
                     "description": vacancy.select_one("div.desc").text.strip(),  # type: ignore

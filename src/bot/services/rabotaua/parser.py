@@ -43,7 +43,6 @@ class RabotaUAParser:
                     "filter": {
                         "keywords": query,
                         "clusterKeywords": [],
-                        "cityId": "2",
                         "location": {
                             "longitude": 0,
                             "latitude": 0,
@@ -77,15 +76,17 @@ class RabotaUAParser:
 
         return [
             {
-                "id": vacancy["id"],
+                "id": "rabotaua" + str(vacancy["id"]),
                 "title": vacancy["title"],
-                "company": vacancy["company"]["name"],
+                "company": vacancy["company"]["name"]
+                if vacancy["company"] is not None
+                else "Анонiмна компанiя",
                 "description": vacancy["description"].strip(),
                 "min_salary": vacancy["salary"]["amountFrom"],
                 "max_salary": vacancy["salary"]["amountFrom"],
                 "salary_currency": "грн",
                 "salary_period": "month",
-                "url": f"https://{self.domain}/company{vacancy['company']['id']}/vacancy{vacancy['id']}",
+                "url": f"https://{self.domain}/company{vacancy['company']['id'] if vacancy['company'] is not None else 0}/vacancy{vacancy['id']}",
             }
             for vacancy in response["data"]["publishedVacancies"]["items"]
         ]

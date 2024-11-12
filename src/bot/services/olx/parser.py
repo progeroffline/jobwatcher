@@ -50,7 +50,7 @@ class OlxParser:
                     salary = params["value"]
             result.append(
                 {
-                    "id": vacancy["id"],
+                    "id": "olx" + str(vacancy["id"]),
                     "title": vacancy["title"],
                     "company": "",
                     "description": vacancy["description"].strip(),

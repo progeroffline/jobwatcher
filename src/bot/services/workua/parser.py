@@ -29,7 +29,11 @@ class WorkUAParser:
             return response.text
         return ""
 
-    async def search(self, query: str, page: int = 1) -> list[dict[str, Any]]:
+    async def search(
+        self,
+        query: str = "",
+        page: int = 1,
+    ) -> list[dict[str, str | int]]:
         response = await self.make_get_request(
             url=WorkUAEndpoints.SEARCH,
             params={"search": query, "page": page},
@@ -52,7 +56,8 @@ class WorkUAParser:
 
             result.append(
                 {
-                    "id": vacancy.select_one("div.saved-jobs").get("data-id"),  # type: ignore
+                    "id": "workua"
+                    + str(vacancy.select_one("div.saved-jobs").get("data-id")),  # type: ignore
                     "title": vacancy.select_one("h2").text.strip(),  # type: ignore
                     "company": company,
                     "description": " ".join(vacancy.select_one("p").text.split()),  # type: ignore
