@@ -18,3 +18,7 @@ class JobVacancyRepository(BaseRepository):
         stmt = select(JobVacancy).where(JobVacancy.id == id)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def exists(self, id: str) -> bool:
+        query = select(JobVacancy.id).filter_by(id=id).limit(1)
+        return await self._session.scalar(query) is not None

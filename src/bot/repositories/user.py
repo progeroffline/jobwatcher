@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Optional, Sequence, AsyncGenerator
 
 from sqlalchemy import select, update
 from bot.database.models import User
@@ -66,3 +66,9 @@ class UserRepository(BaseRepository):
         query = select(User).where(User.is_admin)
         result = await self._session.scalars(query)
         return result.all()
+
+    async def get_all(self) -> AsyncGenerator[int, None]:
+        result = await self._session.stream(select(User.id))
+
+        async for row in result:
+            yield row.id

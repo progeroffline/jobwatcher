@@ -13,7 +13,7 @@ from bot.dependencies import (
     i18n_middleware,
     session_provider,
     repo_provider,
-    parsers_scheduler,
+    new_jobs_notifications,
 )
 
 
@@ -39,7 +39,7 @@ async def main():
 
     i18n_middleware.setup(dispatcher=dp)
 
-    parsers_scheduler.start()
+    await new_jobs_notifications.start(bot)
     await set_ui_commands(bot)
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 

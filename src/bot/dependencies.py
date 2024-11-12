@@ -8,19 +8,22 @@ from bot.middlewares.repository_provider import RepositoryProviderMiddleware
 from bot.repositories.job_vacancy import JobVacancyRepository
 from bot.repositories.user import UserRepository
 from bot.utils.custom_logger import create_logger
-from bot.utils.parsers_scheduler import create_parser_scheduler
+from bot.utils.new_jobs_notifications import NewJobsNotifications
 
 logger = create_logger(settings.logger_logfile_path)
 engine = create_async_engine(url=settings.get_postgres_dsn_url(), echo=False)
 sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
+
 session_provider = SessionProviderMiddleware(sessionmaker=sessionmaker)
-parsers_scheduler = create_parser_scheduler(JobVacancyRepository(sessionmaker()))
 repo_provider = RepositoryProviderMiddleware(
     {
         "user_repository": UserRepository,
         "job_vacancy_repository": JobVacancyRepository,
     }
 )
+
+new_jobs_notifications = NewJobsNotifications(sessionmaker)
+
 i18n_middleware = I18nMiddleware(
     core=FluentRuntimeCore(
         path=Path(__file__).resolve().parent.joinpath("locales"),
