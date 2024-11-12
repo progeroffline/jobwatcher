@@ -9,7 +9,6 @@ from bot.repositories.channel import ChannelRepository
 from bot.repositories.job_vacancy import JobVacancyRepository
 from bot.repositories.user import UserRepository
 from bot.utils.custom_logger import create_logger
-from bot.utils.new_jobs_notifications import NewJobsNotifications
 
 logger = create_logger(settings.logger_logfile_path)
 engine = create_async_engine(url=settings.get_postgres_dsn_url(), echo=False)
@@ -23,8 +22,6 @@ repo_provider = RepositoryProviderMiddleware(
         "channel_repository": ChannelRepository,
     }
 )
-
-new_jobs_notifications = NewJobsNotifications(sessionmaker)
 
 i18n_middleware = I18nMiddleware(
     core=FluentRuntimeCore(

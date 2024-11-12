@@ -27,9 +27,9 @@ class NewJobsNotifications:
         user_id: int,
         vacancy: dict[str, str | int],
     ) -> None:
-        if settings.noitify_users_about_new_vacancies:
-            await bot.send_message(chat_id=user_id, text=str(vacancy["title"]))
+        await bot.send_message(chat_id=user_id, text=str(vacancy["title"]))
         await asyncio.sleep(0.1)
+        logger.debug(f"Successfully sent notification for user ID: {user_id}")
 
     async def send_notifications_for_job(self, bot: Bot) -> None:
         logger.debug("Send notifications about new job to users")
@@ -37,8 +37,8 @@ class NewJobsNotifications:
             user_repository = UserRepository(session)
             while True:
                 vacancy = await notifications_queue.get()
-                logger.debug(f"Got new vacancy for queue {vacancy}")
-                logger.debug(f"Remove vacancy from queue {vacancy}")
+                logger.debug(f"Got new vacancy from queue {vacancy['id']}")
+                logger.debug(f"Remove vacancy from queue {vacancy['id']}")
                 notifications_queue.task_done()
 
                 if self.first_launch:
@@ -47,7 +47,12 @@ class NewJobsNotifications:
 
                 async for user_id in user_repository.get_all():
                     try:
-                        await self.send_notification(bot, user_id, vacancy)
+                        if settings.noitify_users_about_new_vacancies:
+                            await self.send_notification(bot, user_id, vacancy)
+                        else:
+                            logger.debug(
+                                "Skip sending notification cause notifications disabled by admin"
+                            )
                     except TelegramForbiddenError:
                         logger.debug(
                             f"Skip sending notification cause bot blocked by user ID: {user_id}"
@@ -57,7 +62,6 @@ class NewJobsNotifications:
                             f"Got error when trying sent notification to user ser ID: {user_id},"
                             f"Error: {error}"
                         )
-                        print(error)
 
     async def make_post_to_channel(self, bot: Bot) -> None:
         logger.debug("Send notifications about new job to channels")
