@@ -1,9 +1,9 @@
 from bot.repositories.job_vacancy import JobVacancyRepository
-from bot.services.artstation import ArtStationParser
+from bot.services.olx import OlxParser
 
 
 async def scrap_data(job_vacancy_respository: JobVacancyRepository):
-    service = ArtStationParser()
+    service = OlxParser()
     response = await service.search()
 
     for job_vacancy in response:
