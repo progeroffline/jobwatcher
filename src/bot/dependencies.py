@@ -5,6 +5,7 @@ from bot.config_reader import settings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from bot.middlewares.session_provider import SessionProviderMiddleware
 from bot.middlewares.repository_provider import RepositoryProviderMiddleware
+from bot.repositories.channel import ChannelRepository
 from bot.repositories.job_vacancy import JobVacancyRepository
 from bot.repositories.user import UserRepository
 from bot.utils.custom_logger import create_logger
@@ -19,6 +20,7 @@ repo_provider = RepositoryProviderMiddleware(
     {
         "user_repository": UserRepository,
         "job_vacancy_repository": JobVacancyRepository,
+        "channel_repository": ChannelRepository,
     }
 )
 

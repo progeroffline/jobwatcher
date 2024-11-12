@@ -8,4 +8,8 @@ class BaseRepository(ABC):
         self._session = session
 
     def __del__(self):
-        asyncio.create_task(self._session.close())
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._session.close())
+        except RuntimeError:
+            asyncio.run(self._session.close())

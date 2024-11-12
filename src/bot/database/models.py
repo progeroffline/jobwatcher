@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, BigInteger, Integer, String, Text
+from sqlalchemy import Boolean, BigInteger, Integer, String, Text, inspect
 from sqlalchemy.orm import Mapped, mapped_column
 from bot.database.abstracts import ModelPrettyPrint
 
@@ -33,8 +33,12 @@ class JobVacancy(ModelPrettyPrint):
     max_salary: Mapped[int] = mapped_column(Integer, default=0)
     salary_currency: Mapped[str] = mapped_column(String, default="")
     salary_period: Mapped[str] = mapped_column(String, default="")
+    sent_to_channel: Mapped[bool] = mapped_column(Boolean, default=False)
 
     url: Mapped[str] = mapped_column(String, default="")
+
+    def to_dict(self):
+        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
 
 
 class Channel(ModelPrettyPrint):
@@ -46,4 +50,5 @@ class Channel(ModelPrettyPrint):
         unique=True,
         autoincrement=False,
     )
-    post_n_every_hours: Mapped[int] = mapped_column(Integer, default=1)
+    title: Mapped[str] = mapped_column(String, default="")
+    post_interval: Mapped[int] = mapped_column(Integer, default=1)

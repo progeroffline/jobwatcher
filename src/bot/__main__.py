@@ -25,6 +25,9 @@ async def main():
 
     dp = Dispatcher()
 
+    dp.update.middleware(session_provider)
+    dp.update.middleware(repo_provider)
+
     dp.update.middleware(LoggingMiddleware())
     dp.callback_query.middleware(CallbackAnswerMiddleware())
 

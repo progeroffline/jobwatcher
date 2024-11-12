@@ -1,9 +1,11 @@
 import asyncio
+from datetime import datetime
 from aiogram import Bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.ext.asyncio.session import async_sessionmaker
 
+from bot.repositories.channel import ChannelRepository
 from bot.repositories.job_vacancy import JobVacancyRepository
 from bot.repositories.user import UserRepository
 from . import artstation, belmeta, jobsua, olx, rabotaua, workaua
@@ -14,7 +16,10 @@ class NewJobsNotifications:
     def __init__(self, sessionmaker: async_sessionmaker):
         self.sessionmaker = sessionmaker
         self.scheduler = AsyncIOScheduler()
+        self.job_vacancy_repository = JobVacancyRepository(sessionmaker())
         self.user_repository = UserRepository(sessionmaker())
+        self.channel_repository = ChannelRepository(sessionmaker())
+        self.first_launch = True
 
     async def send_notification(
         self,
@@ -29,10 +34,25 @@ class NewJobsNotifications:
         while True:
             vacancy = await notifications_queue.get()
 
-            async for user_id in self.user_repository.get_all():
-                await self.send_notification(bot, user_id, vacancy)
+            if not self.first_launch:
+                async for user_id in self.user_repository.get_all():
+                    await self.send_notification(bot, user_id, vacancy)
 
             notifications_queue.task_done()
+
+    async def make_post_to_channel(self, bot: Bot) -> None:
+        channels = await self.channel_repository.get_all()
+        vacancies = await self.job_vacancy_repository.get_not_sent_to_channel()
+        now = datetime.now()
+
+        for channel in channels:
+            if now.minute % channel.post_interval == 0:
+                for vacancy in vacancies:
+                    await self.send_notification(bot, channel.id, vacancy.to_dict())
+                    await self.job_vacancy_repository.mark_as_sent_to_channel(
+                        vacancy.id
+                    )
+                    await asyncio.sleep(3)
 
     async def scrap_data(self) -> None:
         async with self.sessionmaker() as session:
@@ -42,12 +62,19 @@ class NewJobsNotifications:
             await olx.scrap_data(JobVacancyRepository(session))
             await rabotaua.scrap_data(JobVacancyRepository(session))
             await workaua.scrap_data(JobVacancyRepository(session))
+            self.first_launch = False
 
     async def start(self, bot: Bot) -> None:
         self.scheduler.add_job(
             self.scrap_data,
-            trigger=IntervalTrigger(minutes=5),
+            trigger=IntervalTrigger(minutes=1),
             max_instances=1,
+        )
+        self.scheduler.add_job(
+            self.make_post_to_channel,
+            "interval",
+            minutes=2,
+            args=(bot,),
         )
         self.scheduler.start()
         asyncio.create_task(self.send_notifications_for_job(bot))
