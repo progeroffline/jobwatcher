@@ -73,3 +73,16 @@ class JobVacancyLocation(ModelPrettyPrint):
 
     def to_dict(self):
         return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
+
+
+class JobVacancyCategory(ModelPrettyPrint):
+    __tablename__ = "job_vacancy_category"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        unique=True,
+    )
+
+    name: Mapped[str] = mapped_column(String, default="", nullable=True)
+    site_id: Mapped[str] = mapped_column(String, default="", nullable=True)

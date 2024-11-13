@@ -1,4 +1,3 @@
-from typing import Any
 import httpx
 from bs4 import BeautifulSoup, NavigableString
 from .endpoints import WorkUAEndpoints
@@ -15,6 +14,36 @@ class WorkUAParser:
                 "Accept": "text/html,application/xhtml+xml,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             }
         )
+        self.categories = [
+            {"id": 1, "name": "IT, комп'ютери, інтернет"},
+            {"id": 2, "name": "Адмiнiстрацiя, керівництво середньої ланки"},
+            {"id": 3, "name": "Бухгалтерія, аудит"},
+            {"id": 4, "name": "Готельно-ресторанний бізнес, туризм"},
+            {"id": 5, "name": "Дизайн, творчість"},
+            {"id": 6, "name": "Краса, фітнес, спорт"},
+            {"id": 7, "name": "Культура, музика, шоу-бізнес"},
+            {"id": 8, "name": "Логістика, склад, ЗЕД"},
+            {"id": 9, "name": "Маркетинг, реклама, PR"},
+            {"id": 10, "name": "Медицина, фармацевтика"},
+            {"id": 11, "name": "Нерухомість"},
+            {"id": 12, "name": "Освіта, наука"},
+            {"id": 13, "name": "Охорона, безпека"},
+            {"id": 14, "name": "Робочі спеціальності, виробництво"},
+            {"id": 15, "name": "Секретаріат, діловодство, АГВ"},
+            {"id": 17, "name": "ЗМІ, видавництво, поліграфія"},
+            {"id": 18, "name": "Страхування"},
+            {"id": 19, "name": "Будівництво, архітектура"},
+            {"id": 20, "name": "Сфера обслуговування"},
+            {"id": 21, "name": "Топменеджмент, керівництво вищої ланки"},
+            {"id": 22, "name": "Продаж, закупівля"},
+            {"id": 23, "name": "Роздрібна торгівля"},
+            {"id": 24, "name": "Транспорт, автобізнес"},
+            {"id": 25, "name": "Управління персоналом, HR"},
+            {"id": 26, "name": "Фінанси, банк"},
+            {"id": 27, "name": "Юриспруденція"},
+            {"id": 30, "name": "Сільське господарство, агробізнес"},
+            {"id": 6792, "name": "Телекомунікації та зв'язок"},
+        ]
 
     def get_soup(self, html: str) -> BeautifulSoup:
         return BeautifulSoup(html, "html.parser")
@@ -29,53 +58,78 @@ class WorkUAParser:
             return response.text
         return ""
 
+    async def get_categories(self) -> list[dict[str, str]]:
+        response = await self.make_get_request(WorkUAEndpoints.CATEGORIES)
+        soup = self.get_soup(response)
+
+        return [
+            {
+                "id": str(category.get("href"))
+                .replace("/?advs=1", "")
+                .replace("/jobs-", ""),
+                "name": category.text,
+            }
+            for category in soup.select("#js-ajax-container a.link-inverse")
+        ]
+
     async def search(
         self,
         query: str = "",
         page: int = 1,
     ) -> list[dict[str, str | int | list[dict[str, str]]]]:
-        response = await self.make_get_request(
-            url=WorkUAEndpoints.SEARCH,
-            params={"search": query, "page": page},
-        )
-        soup = self.get_soup(response)
-        vacancies_list = soup.select_one("div#pjax-jobs-list")
-        if vacancies_list is None or isinstance(vacancies_list, NavigableString):
-            return []
+        if len(self.categories) == 0:
+            self.categories = await self.get_categories()
 
         result = []
-        vacancies = vacancies_list.select("div.card")
-        for vacancy in vacancies:
-            span_strong = vacancy.select("span.strong-600")
-            min_salary, max_salary, salary_currency = (
-                (0, 0, "грн")
-                if len(span_strong) < 2
-                else extract_salary(span_strong[0].text)
+        for category in self.categories:
+            response = await self.make_get_request(
+                url=WorkUAEndpoints.SEARCH,
+                params={
+                    "page": page,
+                    "search": query,
+                    "category": category["id"],
+                },
             )
-            company = span_strong[-1].text if span_strong else ""
+            soup = self.get_soup(response)
+            vacancies_list = soup.select_one("div#pjax-jobs-list")
+            if vacancies_list is None or isinstance(vacancies_list, NavigableString):
+                continue
 
-            result.append(
-                {
-                    "id": "workua"
-                    + str(vacancy.select_one("div.saved-jobs").get("data-id")),  # type: ignore
-                    "title": vacancy.select_one("h2").text.strip(),  # type: ignore
-                    "company": company,
-                    "description": " ".join(vacancy.select_one("p").text.split()),  # type: ignore
-                    "min_salary": min_salary,
-                    "max_salary": max_salary,
-                    "salary_currency": salary_currency,
-                    "salary_period": "month",
-                    "url": f"https://{self.domain}/jobs/{vacancy.select_one('div.saved-jobs').get('data-id')}",  # type: ignore
-                    "locations": [
-                        {
-                            "continent": "Europe",
-                            "country": "Ukraine",
-                            "city": vacancy.select(".card .mt-xs span[class='']")[-1]
-                            .text.replace(",", "")  # type: ignore
-                            .split("шукаємо у")[0],  # type: ignore
-                        }
-                    ],
-                }
-            )
+            vacancies = vacancies_list.select("div.card")
+            for vacancy in vacancies:
+                span_strong = vacancy.select("span.strong-600")
+                min_salary, max_salary, salary_currency = (
+                    (0, 0, "грн")
+                    if len(span_strong) < 2
+                    else extract_salary(span_strong[0].text)
+                )
+                company = span_strong[-1].text if span_strong else ""
+
+                result.append(
+                    {
+                        "id": "workua"
+                        + str(vacancy.select_one("div.saved-jobs").get("data-id")),  # type: ignore
+                        "title": vacancy.select_one("h2").text.strip(),  # type: ignore
+                        "company": company,
+                        "description": " ".join(vacancy.select_one("p").text.split()),  # type: ignore
+                        "min_salary": min_salary,
+                        "max_salary": max_salary,
+                        "salary_currency": salary_currency,
+                        "salary_period": "month",
+                        "url": f"https://{self.domain}/jobs/{vacancy.select_one('div.saved-jobs').get('data-id')}",  # type: ignore
+                        "locations": [
+                            {
+                                "continent": "Europe",
+                                "country": "Ukraine",
+                                "city": vacancy.select(".card .mt-xs span[class='']")[
+                                    -1
+                                ]
+                                .text.replace(",", "")  # type: ignore
+                                .split("шукаємо у")[0],  # type: ignore
+                            }
+                        ],
+                        "category": category,
+                    }
+                )
 
         return result

@@ -2,10 +2,17 @@ from typing import Sequence
 from sqlalchemy import select, update
 from bot.database.models import JobVacancy
 from bot.database.models.job_vacancy import JobVacancyLocation
+from bot.database.models.job_vacancy import JobVacancyCategory
 from bot.repositories.abstracts import BaseRepository
 
 
 class JobVacancyRepository(BaseRepository):
+    async def create_category(self, **kwargs) -> JobVacancyCategory:
+        job_vacancy_category = JobVacancyCategory(**kwargs)
+        self._session.add(job_vacancy_category)
+        await self._session.commit()
+        return job_vacancy_category
+
     async def create_location(self, **kwargs) -> JobVacancyLocation:
         job_vacancy_location = JobVacancyLocation(**kwargs)
         self._session.add(job_vacancy_location)
