@@ -20,6 +20,22 @@ class NewJobsNotifications:
         self.sessionmaker = sessionmaker
         self.scheduler = AsyncIOScheduler()
         self.first_launch = True
+        self.service_objects = {
+            "artstation": artstation,
+            "belmeta": belmeta,
+            "jobsua": jobsua,
+            "olx": olx,
+            "rabotaua": rabotaua,
+            "workua": workaua,
+        }
+        self.service_first_launch_state = {
+            "artstation": True,
+            "belmeta": True,
+            "jobsua": True,
+            "olx": True,
+            "rabotaua": True,
+            "workua": True,
+        }
 
     async def send_notification(
         self,
@@ -41,7 +57,7 @@ class NewJobsNotifications:
                 logger.debug(f"Remove vacancy from queue {vacancy['id']}")
                 notifications_queue.task_done()
 
-                if self.first_launch:
+                if any(self.service_first_launch_state.values()):
                     logger.debug("Skip sending notification cause it is a first launch")
                     continue
 
@@ -96,35 +112,25 @@ class NewJobsNotifications:
                     await job_vacancy_repository.mark_as_sent_to_channel(vacancy.id)
                     await asyncio.sleep(3)
 
-    async def scrap_data(self) -> None:
-        logger.debug("Scrap vacancies from sites")
+    async def scrap_data(self, service_name: str) -> None:
         async with self.sessionmaker() as session:
-            logger.debug("Scrap vacancies from artstation site")
-            await artstation.scrap_data(JobVacancyRepository(session))
+            logger.debug(f"Scrap vacancies from {service_name} site")
+            await self.service_objects[service_name].scrap_data(
+                JobVacancyRepository(session)
+            )
 
-            logger.debug("Scrap vacancies from belmeta site")
-            await belmeta.scrap_data(JobVacancyRepository(session))
-
-            logger.debug("Scrap vacancies from jobsua site")
-            await jobsua.scrap_data(JobVacancyRepository(session))
-
-            logger.debug("Scrap vacancies from olx site")
-            await olx.scrap_data(JobVacancyRepository(session))
-
-            logger.debug("Scrap vacancies from rabotaua site")
-            await rabotaua.scrap_data(JobVacancyRepository(session))
-
-            logger.debug("Scrap vacancies from workaua site")
-            await workaua.scrap_data(JobVacancyRepository(session))
-            self.first_launch = False
+            self.service_first_launch_state[service_name] = False
 
     async def start(self, bot: Bot) -> None:
         logger.debug("Create tasks for NewJobsNotifications service")
-        self.scheduler.add_job(
-            self.scrap_data,
-            trigger=IntervalTrigger(minutes=1),
-            max_instances=1,
-        )
+
+        for service_name in self.service_objects.keys():
+            self.scheduler.add_job(
+                self.scrap_data,
+                trigger=IntervalTrigger(minutes=1),
+                max_instances=1,
+                args=(service_name,),
+            )
         self.scheduler.add_job(
             self.make_post_to_channel,
             "interval",

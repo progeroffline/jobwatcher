@@ -1,7 +1,7 @@
 from typing import Optional, Sequence, AsyncGenerator
 
 from sqlalchemy import select, update
-from bot.database.models import User
+from bot.database.models.user import User
 from bot.repositories.abstracts import BaseRepository
 
 

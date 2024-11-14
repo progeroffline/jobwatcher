@@ -58,30 +58,15 @@ class WorkUAParser:
             return response.text
         return ""
 
-    async def get_categories(self) -> list[dict[str, str]]:
-        response = await self.make_get_request(WorkUAEndpoints.CATEGORIES)
-        soup = self.get_soup(response)
-
-        return [
-            {
-                "id": str(category.get("href"))
-                .replace("/?advs=1", "")
-                .replace("/jobs-", ""),
-                "name": category.text,
-            }
-            for category in soup.select("#js-ajax-container a.link-inverse")
-        ]
-
     async def search(
         self,
         query: str = "",
         page: int = 1,
     ) -> list[dict[str, str | int | list[dict[str, str]]]]:
-        if len(self.categories) == 0:
-            self.categories = await self.get_categories()
-
         result = []
         for category in self.categories:
+            category["service_name"] = "workua"
+            category["service_id"] = str(category["id"])
             response = await self.make_get_request(
                 url=WorkUAEndpoints.SEARCH,
                 params={

@@ -1,25 +1,21 @@
+from typing import TYPE_CHECKING
 from sqlalchemy import (
-    BigInteger,
     Boolean,
-    Column,
     ForeignKey,
     Integer,
     String,
-    Table,
     Text,
     inspect,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from bot.database.abstracts import ModelPrettyPrint
-from bot.database.base import Base
-
-
-job_vacancy_location_association = Table(
-    "job_vacancy_location_association",
-    Base.metadata,
-    Column("job_vacancy_id", ForeignKey("job_vacancies.id"), primary_key=True),
-    Column("location_id", ForeignKey("job_vacancies_locations.id"), primary_key=True),
+from bot.database.models.job_vacancy_location import (
+    job_vacancy_location_association,
 )
+
+if TYPE_CHECKING:
+    from .job_vacancy_location import JobVacancyLocation
+    from .job_vacancy_categories import JobVacancyCategory
 
 
 class JobVacancy(ModelPrettyPrint):
@@ -47,42 +43,17 @@ class JobVacancy(ModelPrettyPrint):
         back_populates="vacancies",
     )
 
+    category_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("job_vacancy_categories.id"),
+        nullable=False,
+    )
+
+    category: Mapped["JobVacancyCategory"] = relationship(
+        "JobVacancyCategory", back_populates="vacancies"
+    )
+
     def to_dict(self):
         data = {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
         data["locations"] = [location.to_dict() for location in self.locations]
         return data
-
-
-class JobVacancyLocation(ModelPrettyPrint):
-    __tablename__ = "job_vacancies_locations"
-
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        primary_key=True,
-        unique=True,
-    )
-    continent: Mapped[str] = mapped_column(String, default="")
-    country: Mapped[str] = mapped_column(String, default="")
-    city: Mapped[str] = mapped_column(String, default="")
-
-    vacancies: Mapped[list[JobVacancy]] = relationship(
-        "JobVacancy",
-        secondary=job_vacancy_location_association,
-        back_populates="locations",
-    )
-
-    def to_dict(self):
-        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
-
-
-class JobVacancyCategory(ModelPrettyPrint):
-    __tablename__ = "job_vacancy_category"
-
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        primary_key=True,
-        unique=True,
-    )
-
-    name: Mapped[str] = mapped_column(String, default="", nullable=True)
-    site_id: Mapped[str] = mapped_column(String, default="", nullable=True)

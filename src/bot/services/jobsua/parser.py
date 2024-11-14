@@ -43,6 +43,8 @@ class JobsUAParser:
             {
                 "id": str(category.get("href")).split("/")[-1],
                 "name": str(category.get("title")),
+                "service_name": "jobsua",
+                "service_id": str(category.get("href")).split("/")[-1],
             }
             for category in soup.select(
                 ".b-default__categories-list ul:not([class='none']) a.b-default__categories-link"

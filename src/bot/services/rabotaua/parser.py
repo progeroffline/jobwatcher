@@ -43,6 +43,8 @@ class RabotaUAParser:
             {
                 "id": category["id"],  # type: ignore
                 "name": category["ua"],  # type: ignore
+                "service_name": "rabotaua",
+                "service_id": str(category["id"]),  # type: ignore
             }
             for category in response
         ]

@@ -39,6 +39,8 @@ class BelmetaParser:
             {
                 "id": str(category.get("href")).split("/")[-1],
                 "name": category.text,
+                "service_name": "belmeta",
+                "service_id": str(category.get("href")).split("/")[-1],
             }
             for category in soup.select(".list-cat a")  # type: ignore
         ]

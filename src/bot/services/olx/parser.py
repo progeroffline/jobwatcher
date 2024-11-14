@@ -58,6 +58,9 @@ class OlxParser:
             return response.json()
         return {}
 
+    async def get_categories(self) -> list[dict[str, str | int]]:
+        return self.categoires
+
     async def search(
         self,
         query: str = "",
@@ -66,6 +69,9 @@ class OlxParser:
     ) -> list[dict[str, str | int | list[dict[str, str]]]]:
         result = []
         for category in self.categoires:
+            category["service_name"] = "olx"
+            category["service_id"] = str(category["id"])
+
             response = await self.make_get_request(
                 url=OlxEndpoints.SEARCH,
                 params={

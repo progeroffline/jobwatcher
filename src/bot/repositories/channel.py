@@ -1,7 +1,7 @@
 from typing import Sequence
 from sqlalchemy import delete, select, update
 
-from bot.database.models import Channel
+from bot.database.models.channel import Channel
 from bot.repositories.abstracts import BaseRepository
 
 

@@ -37,7 +37,7 @@ class ArtStationParser:
             return response.json()
         return {}
 
-    async def get_industry_categories(self) -> list[dict[str, str | int]]:
+    async def get_categories(self) -> list[dict[str, str | int]]:
         response = await self.make_get_request(ArtStationsEndpoints.CATEGORIES)
         return [
             classification
@@ -52,7 +52,7 @@ class ArtStationParser:
         query: str = "",
     ) -> list[dict[str, str | int | list[dict[str, str]]]]:
         if len(self.categories) == 0:
-            self.categories = await self.get_industry_categories()
+            self.categories = await self.get_categories()
 
         result = []
         for category in self.categories:
@@ -89,7 +89,12 @@ class ArtStationParser:
                         if vacancy.get("salary_range") is not None
                         else "",
                         "url": f"https://{self.domain}/jobs/{vacancy['hash_id']}",
-                        "category": category,
+                        "category": {
+                            "id": str(category["id"]),
+                            "service_id": str(category["id"]),
+                            "name": category["name"],
+                            "service_name": "artstation",
+                        },
                         "locations": [
                             {
                                 "continent": location["locality"]["continent_name"]
