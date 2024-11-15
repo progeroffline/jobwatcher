@@ -6,7 +6,7 @@ from aiogram.enums import ParseMode
 from aiogram.utils.callback_answer import CallbackAnswerMiddleware
 
 from bot.config_reader import settings
-from bot.routers import start, admin, user
+from bot.routers import start, admin, user, help
 from bot.ui_commands import set_ui_commands
 from bot.utils.new_jobs_notifications import NewJobsNotifications
 from bot.dependencies import (
@@ -39,6 +39,7 @@ async def main():
     dp.include_router(start.router)
     dp.include_router(admin.router)
     dp.include_router(user.router)
+    dp.include_router(help.router)
 
     i18n_middleware.setup(dispatcher=dp)
 
