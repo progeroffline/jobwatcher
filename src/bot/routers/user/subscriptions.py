@@ -57,6 +57,7 @@ async def enable_user_subscription_to_category(
     )
 
     category = await job_vacancy_repository.get_category(id=callback_data.id)
+    categories = await job_vacancy_repository.get_categories()
     if callback_data.action == SubscriptionsMenuActions.ENABLE:
         await user_repository.enable_subscription_to_category(
             call.from_user.id,
@@ -67,8 +68,14 @@ async def enable_user_subscription_to_category(
             call.from_user.id,
             category,
         )
+    elif callback_data.action == SubscriptionsMenuActions.ENABLE_ALL:
+        await user_repository.enable_subscription_to_category(
+            call.from_user.id,
+            categories=categories,
+        )
+    elif callback_data.action == SubscriptionsMenuActions.DISABLE_ALL:
+        await user_repository.disable_subscription_to_category(call.from_user.id)
 
-    categories = await job_vacancy_repository.get_categories()
     subscriptions = await user_repository.get_subscriptions(call.from_user.id)
     await call.message.edit_text(
         i18n.get("subscriptions_menu"),

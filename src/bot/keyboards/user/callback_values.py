@@ -8,3 +8,5 @@ class UserMenuActions(StrEnum):
 class SubscriptionsMenuActions(StrEnum):
     ENABLE = "enable"
     DISABLE = "disable"
+    ENABLE_ALL = "enable_all"
+    DISABLE_ALL = "disable_all"

@@ -28,25 +28,35 @@ class UserRepository(BaseRepository):
     async def enable_subscription_to_category(
         self,
         user_id: int,
-        category: JobVacancyCategory,
+        category: Optional[JobVacancyCategory] = None,
+        categories: Sequence[JobVacancyCategory] = [],
     ) -> None:
         user = await self.get_user_by_id(user_id)
         if user is None:
             return
 
-        user.subscribed_categories.append(category)
+        if category is not None:
+            user.subscribed_categories.append(category)
+        else:
+            for category in categories:
+                if category not in user.subscribed_categories:
+                    user.subscribed_categories.append(category)
         await self._session.commit()
 
     async def disable_subscription_to_category(
         self,
         user_id: int,
-        category: JobVacancyCategory,
+        category: Optional[JobVacancyCategory] = None,
     ) -> None:
         user = await self.get_user_by_id(user_id)
         if user is None:
             return
 
-        user.subscribed_categories.remove(category)
+        if category is None:
+            user.subscribed_categories.clear()
+        else:
+            user.subscribed_categories.remove(category)
+
         await self._session.commit()
 
     async def get_user_by_id(self, user_id: int) -> User | None:
