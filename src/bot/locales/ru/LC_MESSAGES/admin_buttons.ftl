@@ -1,1 +1,1 @@
-back_to_admin_menu = Back to admin menu
+back_to_admin_menu = 🔙 Вернуться в админ-меню

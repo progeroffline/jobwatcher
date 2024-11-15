@@ -27,7 +27,6 @@ async def user_welcome_message(message: Message, i18n: I18nContext):
 @router.callback_query(UserMenu.filter(F.action == UserMenuActions.BACK_TO_MENU))
 async def back_to_menu(
     call: CallbackQuery,
-    callback_data: UserMenu,
     i18n: I18nContext,
 ):
     if call.message is None or isinstance(call.message, InaccessibleMessage):
