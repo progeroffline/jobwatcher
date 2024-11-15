@@ -34,6 +34,15 @@ class JobVacancyRepository(BaseRepository):
             return await self.create_category(**kwargs)
         return result
 
+    async def get_category_by_service_id(
+        self, service_id: str, service_name: str
+    ) -> JobVacancyCategory:
+        service_id = await self.get_service_id(
+            service_id=service_id,
+            service_name=service_name,
+        )
+        return await self.get_category(id=service_id.category_id)
+
     async def get_categories(self) -> Sequence[JobVacancyCategory]:
         stmt = select(JobVacancyCategory)
         result = await self._session.execute(stmt)

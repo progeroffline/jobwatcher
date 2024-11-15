@@ -113,8 +113,15 @@ class UserRepository(BaseRepository):
         result = await self._session.scalars(query)
         return result.all()
 
-    async def get_all(self) -> AsyncGenerator[int, None]:
-        result = await self._session.stream(select(User.id))
+    async def get_all(
+        self,
+        category_id: Optional[int] = None,
+    ) -> AsyncGenerator[int, None]:
+        if category_id is None:
+            stmt = select(User.id)
+        else:
+            stmt = select(User.id).where(User.subscribed_categories.any(id=category_id))
+        result = await self._session.stream(stmt)
 
         async for row in result:
             yield row.id

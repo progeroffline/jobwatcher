@@ -28,13 +28,13 @@ class NewJobsNotifications:
             "rabotaua": rabotaua,
             "workua": workaua,
         }
-        self.service_first_launch_state = {
-            "artstation": True,
-            "belmeta": True,
-            "jobsua": True,
-            "olx": True,
-            "rabotaua": True,
-            "workua": True,
+        self.service_launched = {
+            "artstation": False,
+            "belmeta": False,
+            "jobsua": False,
+            "olx": False,
+            "rabotaua": False,
+            "workua": False,
         }
 
     async def send_notification(
@@ -43,41 +43,44 @@ class NewJobsNotifications:
         user_id: int,
         vacancy: dict[str, str | int],
     ) -> None:
-        await bot.send_message(chat_id=user_id, text=str(vacancy["title"]))
-        await asyncio.sleep(0.1)
-        logger.debug(f"Successfully sent notification for user ID: {user_id}")
+        try:
+            await bot.send_message(chat_id=user_id, text=str(vacancy["title"]))
+            await asyncio.sleep(0.1)
+            logger.debug(f"Successfully sent notification for user ID: {user_id}")
+        except TelegramForbiddenError:
+            logger.debug(
+                f"Skip sending notification cause bot blocked by user ID: {user_id}"
+            )
+        except Exception as error:
+            logger.error(
+                f"Got error when trying sent notification to user ser ID: {user_id},"
+                f"Error: {error}"
+            )
 
     async def send_notifications_for_job(self, bot: Bot) -> None:
         logger.debug("Send notifications about new job to users")
         async with self.sessionmaker() as session:
             user_repository = UserRepository(session)
+            job_vacancy_repository = JobVacancyRepository(session)
             while True:
                 vacancy = await notifications_queue.get()
                 logger.debug(f"Got new vacancy from queue {vacancy['id']}")
                 logger.debug(f"Remove vacancy from queue {vacancy['id']}")
                 notifications_queue.task_done()
 
-                if any(self.service_first_launch_state.values()):
+                logger.debug(f"Get sub category service id where {vacancy['category']}")
+                category = await job_vacancy_repository.get_category_by_service_id(
+                    vacancy["category"]["service_id"],
+                    vacancy["category"]["service_name"],
+                )
+
+                if not all(self.service_launched.values()):
                     logger.debug("Skip sending notification cause it is a first launch")
                     continue
 
-                async for user_id in user_repository.get_all():
-                    try:
-                        if settings.noitify_users_about_new_vacancies:
-                            await self.send_notification(bot, user_id, vacancy)
-                        else:
-                            logger.debug(
-                                "Skip sending notification cause notifications disabled by admin"
-                            )
-                    except TelegramForbiddenError:
-                        logger.debug(
-                            f"Skip sending notification cause bot blocked by user ID: {user_id}"
-                        )
-                    except Exception as error:
-                        logger.error(
-                            f"Got error when trying sent notification to user ser ID: {user_id},"
-                            f"Error: {error}"
-                        )
+                async for user_id in user_repository.get_all(category_id=category.id):
+                    if settings.noitify_users_about_new_vacancies:
+                        await self.send_notification(bot, user_id, vacancy)
 
     async def make_post_to_channel(self, bot: Bot) -> None:
         logger.debug("Send notifications about new job to channels")
@@ -119,7 +122,7 @@ class NewJobsNotifications:
                 JobVacancyRepository(session)
             )
 
-            self.service_first_launch_state[service_name] = False
+            self.service_launched[service_name] = True
 
     async def start(self, bot: Bot) -> None:
         logger.debug("Create tasks for NewJobsNotifications service")
@@ -127,14 +130,14 @@ class NewJobsNotifications:
         for service_name in self.service_objects.keys():
             self.scheduler.add_job(
                 self.scrap_data,
-                trigger=IntervalTrigger(minutes=1),
+                trigger=IntervalTrigger(minutes=5),
                 max_instances=1,
                 args=(service_name,),
             )
         self.scheduler.add_job(
             self.make_post_to_channel,
             "interval",
-            minutes=2,
+            minutes=10,
             args=(bot,),
         )
         logger.debug("Start scheduler for NewJobsNotifications service")
