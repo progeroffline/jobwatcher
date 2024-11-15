@@ -7,6 +7,7 @@ from bot.keyboards.user import inline_keyboards
 from bot.repositories.job_vacancy import JobVacancyRepository
 from bot.repositories.user import UserRepository
 from bot.dependencies import logger
+from aiogram.exceptions import TelegramBadRequest
 
 
 router = Router(name="subscriptions")
@@ -77,7 +78,11 @@ async def enable_user_subscription_to_category(
         await user_repository.disable_subscription_to_category(call.from_user.id)
 
     subscriptions = await user_repository.get_subscriptions(call.from_user.id)
-    await call.message.edit_text(
-        i18n.get("subscriptions_menu"),
-        reply_markup=inline_keyboards.subscriptions_menu(categories, subscriptions),
-    )
+
+    try:
+        await call.message.edit_text(
+            i18n.get("subscriptions_menu"),
+            reply_markup=inline_keyboards.subscriptions_menu(categories, subscriptions),
+        )
+    except TelegramBadRequest:
+        await call.answer()

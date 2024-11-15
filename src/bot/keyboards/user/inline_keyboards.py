@@ -1,3 +1,4 @@
+from itertools import zip_longest
 from typing import Sequence
 from aiogram_i18n import LazyProxy
 from aiogram_i18n.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -27,29 +28,26 @@ def subscriptions_menu(
 ) -> InlineKeyboardMarkup:
     inline_keyboard = []
 
-    for category in categories:
-        user_subscribed = category not in subscriptions
-
-        text = (
-            category.name
-            if user_subscribed
-            else f"{settings.selected_category_char} {category.name}"
-        )
-        action = (
-            SubscriptionsMenuActions.ENABLE
-            if user_subscribed
-            else SubscriptionsMenuActions.DISABLE
-        )
-
+    for pair in zip_longest(*[iter(categories)] * 2):
         inline_keyboard.append(
             [
                 InlineKeyboardButton(
-                    text=text,
+                    text=(
+                        f"{settings.selected_category_char} {cat.name}"
+                        if cat in subscriptions
+                        else cat.name
+                    ),
                     callback_data=SubscriptionsMenu(
-                        id=category.id,
-                        action=action,
+                        id=cat.id,
+                        action=(
+                            SubscriptionsMenuActions.DISABLE
+                            if cat in subscriptions
+                            else SubscriptionsMenuActions.ENABLE
+                        ),
                     ).pack(),
                 )
+                for cat in pair
+                if cat is not None
             ]
         )
 
