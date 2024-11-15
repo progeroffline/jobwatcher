@@ -5,6 +5,7 @@ from pathlib import Path
 
 class Settings(BaseSettings):
     bot_token: SecretStr
+    super_admin_telegram_id: int
 
     db_driver: str = "postgresql+psycopg"
     db_host: str
@@ -13,13 +14,12 @@ class Settings(BaseSettings):
     db_password: str
     db_name: str
 
-    super_admin_telegram_id: int
-
     logger_logfile_path: Path = (
         Path(__file__).resolve().parent.joinpath("logs", "bot.log")
     )
 
     noitify_users_about_new_vacancies: bool = True
+    selected_category_char: str = "✅"
 
     class Config:
         env_file = Path(__file__).resolve().parent.parent.parent.joinpath(".env")

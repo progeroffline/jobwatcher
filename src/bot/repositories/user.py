@@ -1,6 +1,8 @@
 from typing import Optional, Sequence, AsyncGenerator
 
 from sqlalchemy import select, update
+from sqlalchemy.orm import selectinload
+from bot.database.models.job_vacancy_categories import JobVacancyCategory
 from bot.database.models.user import User
 from bot.repositories.abstracts import BaseRepository
 
@@ -17,8 +19,42 @@ class UserRepository(BaseRepository):
         await self._session.commit()
         return user
 
+    async def get_subscriptions(self, user_id: int) -> Sequence[JobVacancyCategory]:
+        user = await self.get_user_by_id(user_id)
+        if user is None:
+            return []
+        return user.subscribed_categories
+
+    async def enable_subscription_to_category(
+        self,
+        user_id: int,
+        category: JobVacancyCategory,
+    ) -> None:
+        user = await self.get_user_by_id(user_id)
+        if user is None:
+            return
+
+        user.subscribed_categories.append(category)
+        await self._session.commit()
+
+    async def disable_subscription_to_category(
+        self,
+        user_id: int,
+        category: JobVacancyCategory,
+    ) -> None:
+        user = await self.get_user_by_id(user_id)
+        if user is None:
+            return
+
+        user.subscribed_categories.remove(category)
+        await self._session.commit()
+
     async def get_user_by_id(self, user_id: int) -> User | None:
-        query = select(User).filter_by(id=user_id)
+        query = (
+            select(User)
+            .options(selectinload(User.subscribed_categories))
+            .where(User.id == user_id)
+        )
         return await self._session.scalar(query)
 
     async def exists(

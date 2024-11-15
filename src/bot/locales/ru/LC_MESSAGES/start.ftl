@@ -1,1 +1,1 @@
-welcome_message = Welcome message
+welcome_message = Приветствую вас

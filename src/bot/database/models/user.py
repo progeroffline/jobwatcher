@@ -3,6 +3,7 @@ from sqlalchemy import Boolean, BigInteger, Column, ForeignKey, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from bot.database.abstracts import ModelPrettyPrint
 from bot.database.base import Base
+from bot.database.mixins import AuditMixin
 
 if TYPE_CHECKING:
     from .job_vacancy_categories import JobVacancyCategory
@@ -15,7 +16,7 @@ user_subscription_association = Table(
 )
 
 
-class User(ModelPrettyPrint):
+class User(ModelPrettyPrint, AuditMixin):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(

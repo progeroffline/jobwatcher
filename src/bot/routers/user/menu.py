@@ -2,6 +2,7 @@ from aiogram import Router
 from aiogram.types import Message
 from aiogram_i18n import I18nContext
 from bot.dependencies import logger
+from bot.keyboards.user import inline_keyboards
 
 
 router = Router(name="menu")
@@ -15,4 +16,7 @@ async def user_welcome_message(message: Message, i18n: I18nContext):
         f"Chat ID: {message.chat.id},  "
         f"Message: {message.text}"
     )
-    await message.answer(i18n.get("welcome_message"))
+    await message.answer(
+        i18n.get("welcome_message"),
+        reply_markup=inline_keyboards.menu(),
+    )

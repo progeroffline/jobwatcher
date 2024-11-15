@@ -9,6 +9,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from bot.database.abstracts import ModelPrettyPrint
+from bot.database.mixins import AuditMixin
 from bot.database.models.job_vacancy_location import (
     job_vacancy_location_association,
 )
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     from .job_vacancy_categories import JobVacancyCategory
 
 
-class JobVacancy(ModelPrettyPrint):
+class JobVacancy(ModelPrettyPrint, AuditMixin):
     __tablename__ = "job_vacancies"
 
     id: Mapped[str] = mapped_column(
