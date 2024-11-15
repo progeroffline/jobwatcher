@@ -26,7 +26,7 @@ async def subscriptions_menu(
         f"User ID: {call.from_user.id}, "  # type: ignore
         f"Username: {call.from_user.username}, "  # type: ignore
         f"Chat ID: {call.message.chat.id}, "
-        f"CallbackData: {call.data}"
+        f"Callback data: {call.data}"
     )
 
     categories = await job_vacancy_repository.get_categories()
@@ -53,7 +53,7 @@ async def enable_user_subscription_to_category(
         f"User ID: {call.from_user.id}, "  # type: ignore
         f"Username: {call.from_user.username}, "  # type: ignore
         f"Chat ID: {call.message.chat.id}, "
-        f"CallbackData: {call.data}"
+        f"Callback data: {call.data}"
     )
 
     category = await job_vacancy_repository.get_category(id=callback_data.id)

@@ -3,6 +3,7 @@ from enum import StrEnum
 
 class UserMenuActions(StrEnum):
     SUBSCRIPTIONS = "subscriptions"
+    BACK_TO_MENU = "back_to_menu"
 
 
 class SubscriptionsMenuActions(StrEnum):

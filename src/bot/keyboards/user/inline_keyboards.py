@@ -69,7 +69,17 @@ def subscriptions_menu(
                     action=SubscriptionsMenuActions.DISABLE_ALL,
                 ).pack(),
             ),
-        ]
+        ],
+    )
+    inline_keyboard.append(
+        [
+            InlineKeyboardButton(
+                text=LazyProxy("back_to_user_menu"),
+                callback_data=UserMenu(
+                    action=UserMenuActions.BACK_TO_MENU,
+                ).pack(),
+            ),
+        ],
     )
 
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
