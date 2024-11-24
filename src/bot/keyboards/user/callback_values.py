@@ -2,7 +2,8 @@ from enum import StrEnum
 
 
 class UserMenuActions(StrEnum):
-    SUBSCRIPTIONS = "subscriptions"
+    SUBSCRIPTIONS_BY_CATEGORY = "subscriptions_by_category"
+    SUBSCRIPTIONS_BY_KEYWORD = "subscriptions_by_keyword"
     BACK_TO_MENU = "back_to_menu"
 
 

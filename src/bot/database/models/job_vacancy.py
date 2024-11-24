@@ -57,4 +57,5 @@ class JobVacancy(ModelPrettyPrint, AuditMixin):
     def to_dict(self):
         data = {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
         data["locations"] = [location.to_dict() for location in self.locations]
+        data["category"] = self.category.to_dict()
         return data

@@ -1,4 +1,5 @@
 from aiogram import F, Router
+from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InaccessibleMessage, Message
 from aiogram_i18n import I18nContext
 from bot.dependencies import logger
@@ -28,6 +29,7 @@ async def user_welcome_message(message: Message, i18n: I18nContext):
 async def back_to_menu(
     call: CallbackQuery,
     i18n: I18nContext,
+    state: FSMContext,
 ):
     if call.message is None or isinstance(call.message, InaccessibleMessage):
         return await call.answer()
@@ -40,6 +42,7 @@ async def back_to_menu(
         f"Callback data: {call.data}"
     )
 
+    await state.clear()
     await call.message.edit_text(
         i18n.get("welcome_message"),
         reply_markup=inline_keyboards.menu(),

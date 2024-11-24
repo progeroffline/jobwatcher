@@ -8,6 +8,15 @@ from bot.repositories.abstracts import BaseRepository
 
 
 class UserRepository(BaseRepository):
+    async def update(self, user_id: int, **kwargs) -> User:
+        stmt = update(User).where(User.id == user_id).values(**kwargs).returning(User)
+
+        result = await self._session.execute(stmt)
+        await self._session.commit()
+
+        updated_user = result.scalar_one()
+        return updated_user
+
     async def create(
         self,
         id: int,
@@ -116,12 +125,12 @@ class UserRepository(BaseRepository):
     async def get_all(
         self,
         category_id: Optional[int] = None,
-    ) -> AsyncGenerator[int, None]:
+    ) -> AsyncGenerator[User, None]:
         if category_id is None:
-            stmt = select(User.id)
+            stmt = select(User)
         else:
-            stmt = select(User.id).where(User.subscribed_categories.any(id=category_id))
+            stmt = select(User).where(User.subscribed_categories.any(id=category_id))
         result = await self._session.stream(stmt)
 
         async for row in result:
-            yield row.id
+            yield row[0]

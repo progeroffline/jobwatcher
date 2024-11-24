@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import Integer, String
+from sqlalchemy import Integer, String, inspect
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from bot.database.abstracts import ModelPrettyPrint
 from bot.database.models.user import user_subscription_association
@@ -29,3 +29,6 @@ class JobVacancyCategory(ModelPrettyPrint):
         secondary=user_subscription_association,
         back_populates="subscribed_categories",
     )
+
+    def to_dict(self):
+        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}

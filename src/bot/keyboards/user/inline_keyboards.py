@@ -14,8 +14,33 @@ def menu() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=LazyProxy("subscriptions"),
-                    callback_data=UserMenu(action=UserMenuActions.SUBSCRIPTIONS).pack(),
+                    text=LazyProxy("subscriptions_by_category"),
+                    callback_data=UserMenu(
+                        action=UserMenuActions.SUBSCRIPTIONS_BY_CATEGORY
+                    ).pack(),
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=LazyProxy("subscriptions_by_keyword"),
+                    callback_data=UserMenu(
+                        action=UserMenuActions.SUBSCRIPTIONS_BY_KEYWORD,
+                    ).pack(),
+                ),
+            ],
+        ],
+    )
+
+
+def back_to_user_menu() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=LazyProxy("back_to_user_menu"),
+                    callback_data=UserMenu(
+                        action=UserMenuActions.BACK_TO_MENU,
+                    ).pack(),
                 ),
             ],
         ],

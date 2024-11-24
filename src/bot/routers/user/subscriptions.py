@@ -13,7 +13,9 @@ from aiogram.exceptions import TelegramBadRequest
 router = Router(name="subscriptions")
 
 
-@router.callback_query(UserMenu.filter(F.action == UserMenuActions.SUBSCRIPTIONS))
+@router.callback_query(
+    UserMenu.filter(F.action == UserMenuActions.SUBSCRIPTIONS_BY_CATEGORY)
+)
 async def subscriptions_menu(
     call: CallbackQuery,
     user_repository: UserRepository,

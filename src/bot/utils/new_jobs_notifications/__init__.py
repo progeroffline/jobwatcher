@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 from aiogram import Bot
 from aiogram.exceptions import TelegramForbiddenError
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.ext.asyncio.session import async_sessionmaker
@@ -31,7 +32,7 @@ class NewJobsNotifications:
         self.service_launched = {
             "artstation": False,
             "belmeta": False,
-            "jobsua": False,
+            "jobsua": True,
             "olx": False,
             "rabotaua": False,
             "workua": False,
@@ -41,10 +42,40 @@ class NewJobsNotifications:
         self,
         bot: Bot,
         user_id: int,
-        vacancy: dict[str, str | int],
+        vacancy: dict[str, str | int | list[dict[str, str]]],
     ) -> None:
+        salary = f"{vacancy['min_salary']} - {vacancy['max_salary']}"
+        salary = (
+            "Не указано"
+            if salary == "0 - 0"
+            else f"{salary} {vacancy['salary_currency']}"
+        )
+        message = "".join(
+            [
+                f"<b>✨ {vacancy['title']}</b>\n\n",
+                f"<b>🏢 Компания:</b> {vacancy['company']}\n",
+                f"<b>💰 Зарплата</b>: {salary}\n",
+                f"<b>📅 Период:</b> {vacancy['salary_period']}\n",
+                f"<b>📍 Категория:</b> {vacancy['category']['name']}\n",  # type: ignore
+                f"<b>🌐 Локация:</b> {','.join([location['city'] for location in vacancy['locations']])}\n\n",  # type: ignore
+                f"<b>📄 Описание:</b> {vacancy['description']}\n",
+            ]
+        )
         try:
-            await bot.send_message(chat_id=user_id, text=str(vacancy["title"]))
+            await bot.send_message(
+                chat_id=user_id,
+                text=message,
+                reply_markup=InlineKeyboardMarkup(
+                    inline_keyboard=[
+                        [
+                            InlineKeyboardButton(
+                                text="👀 Перейти к вакансии",
+                                url=str(vacancy["url"]),
+                            ),
+                        ]
+                    ]
+                ),
+            )
             await asyncio.sleep(0.1)
             logger.debug(f"Successfully sent notification for user ID: {user_id}")
         except TelegramForbiddenError:
@@ -73,14 +104,23 @@ class NewJobsNotifications:
                     vacancy["category"]["service_id"],
                     vacancy["category"]["service_name"],
                 )
+                # if not all(self.service_launched.values()):
+                #     logger.debug(
+                #         f"Skip sending notification cause not all services lauched {self.service_launched}"
+                #     )
+                #     continue
 
-                if not all(self.service_launched.values()):
-                    logger.debug("Skip sending notification cause it is a first launch")
-                    continue
-
-                async for user_id in user_repository.get_all(category_id=category.id):
+                async for user in user_repository.get_all(category_id=category.id):
                     if settings.noitify_users_about_new_vacancies:
-                        await self.send_notification(bot, user_id, vacancy)
+                        await self.send_notification(bot, user.id, vacancy)
+
+                async for user in user_repository.get_all():
+                    if user.keyword is None or len(user.keyword) == 0:
+                        continue
+                    if settings.noitify_users_about_new_vacancies:
+                        for key in user.keyword.split(","):
+                            if key.lower() in vacancy["title"].lower():
+                                await self.send_notification(bot, user.id, vacancy)
 
     async def make_post_to_channel(self, bot: Bot) -> None:
         logger.debug("Send notifications about new job to channels")
@@ -130,14 +170,14 @@ class NewJobsNotifications:
         for service_name in self.service_objects.keys():
             self.scheduler.add_job(
                 self.scrap_data,
-                trigger=IntervalTrigger(minutes=5),
-                max_instances=1,
+                trigger=IntervalTrigger(minutes=1),
+                max_instances=10,
                 args=(service_name,),
             )
         self.scheduler.add_job(
             self.make_post_to_channel,
             "interval",
-            minutes=10,
+            minutes=1,
             args=(bot,),
         )
         logger.debug("Start scheduler for NewJobsNotifications service")

@@ -1,4 +1,5 @@
-subscriptions = 🔔 Подписаться
+subscriptions_by_category = 🔔 Подписаться по категории
+subscriptions_by_keyword = 🔔 Подписаться по запросу
 
 subscriptions_enable_all = ✅ Выбрать все категории
 
