@@ -8,7 +8,7 @@ from bot.database.mixins import AuditMixin
 if TYPE_CHECKING:
     from .job_vacancy_categories import JobVacancyCategory
 
-user_subscription_association = Table(
+user_category_subscription_association = Table(
     "user_category_subscriptions",
     Base.metadata,
     Column("user_id", ForeignKey("users.id"), primary_key=True),
@@ -31,6 +31,20 @@ class User(ModelPrettyPrint, AuditMixin):
     keyword: Mapped[str] = mapped_column(String, default="", nullable=True)
     subscribed_categories: Mapped[list["JobVacancyCategory"]] = relationship(
         "JobVacancyCategory",
-        secondary=user_subscription_association,
+        secondary=user_category_subscription_association,
         back_populates="subscribed_users",
     )
+    subscribed_regions: Mapped[list["UserRegionSubscription"]] = relationship(
+        "UserRegionSubscription",
+        lazy="selectin",
+        back_populates="user",
+    )
+
+
+class UserRegionSubscription(ModelPrettyPrint):
+    __tablename__ = "user_region_subscription"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))
+    region: Mapped[str] = mapped_column(String)
+    user: Mapped["User"] = relationship("User", back_populates="subscribed_regions")

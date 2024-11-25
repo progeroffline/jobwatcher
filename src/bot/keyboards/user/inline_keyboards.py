@@ -3,7 +3,11 @@ from typing import Sequence
 from aiogram_i18n import LazyProxy
 from aiogram_i18n.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot.keyboards.user.callback_types import SubscriptionsMenu, UserMenu
+from bot.keyboards.user.callback_types import (
+    CategorySubscriptionsMenu,
+    RegionSubscriptionsMenu,
+    UserMenu,
+)
 from bot.keyboards.user.callback_values import SubscriptionsMenuActions, UserMenuActions
 from bot.database.models.job_vacancy_categories import JobVacancyCategory
 from bot.dependencies import settings
@@ -70,7 +74,7 @@ def categories_menu(
                         if cat in subscriptions
                         else cat.name
                     ),
-                    callback_data=SubscriptionsMenu(
+                    callback_data=CategorySubscriptionsMenu(
                         id=cat.id,
                         action=(
                             SubscriptionsMenuActions.DISABLE
@@ -88,14 +92,14 @@ def categories_menu(
         [
             InlineKeyboardButton(
                 text=LazyProxy("subscriptions_enable_all"),
-                callback_data=SubscriptionsMenu(
+                callback_data=CategorySubscriptionsMenu(
                     id=1,
                     action=SubscriptionsMenuActions.ENABLE_ALL,
                 ).pack(),
             ),
             InlineKeyboardButton(
                 text=LazyProxy("subscriptions_disable_all"),
-                callback_data=SubscriptionsMenu(
+                callback_data=CategorySubscriptionsMenu(
                     id=1,
                     action=SubscriptionsMenuActions.DISABLE_ALL,
                 ).pack(),
@@ -118,30 +122,31 @@ def categories_menu(
 
 def regions_menu(
     regions: Sequence[str],
-    subscriptions: Sequence[JobVacancyCategory],
+    subscriptions: Sequence[str],
 ) -> InlineKeyboardMarkup:
     inline_keyboard = []
+    print(regions, subscriptions)
 
     for pair in zip_longest(*[iter(regions)] * 2):
         inline_keyboard.append(
             [
                 InlineKeyboardButton(
                     text=(
-                        f"{settings.selected_category_char} {cat.name}"
-                        if cat in subscriptions
-                        else cat.name
+                        f"{settings.selected_category_char} {region}"
+                        if region in subscriptions
+                        else region
                     ),
-                    callback_data=SubscriptionsMenu(
-                        id=cat.id,
+                    callback_data=RegionSubscriptionsMenu(
+                        region=region,
                         action=(
                             SubscriptionsMenuActions.DISABLE
-                            if cat in subscriptions
+                            if region in subscriptions
                             else SubscriptionsMenuActions.ENABLE
                         ),
                     ).pack(),
                 )
-                for cat in pair
-                if cat is not None
+                for region in pair
+                if region is not None
             ]
         )
 
@@ -149,15 +154,15 @@ def regions_menu(
         [
             InlineKeyboardButton(
                 text=LazyProxy("subscriptions_enable_all"),
-                callback_data=SubscriptionsMenu(
-                    id=1,
+                callback_data=RegionSubscriptionsMenu(
+                    region="",
                     action=SubscriptionsMenuActions.ENABLE_ALL,
                 ).pack(),
             ),
             InlineKeyboardButton(
                 text=LazyProxy("subscriptions_disable_all"),
-                callback_data=SubscriptionsMenu(
-                    id=1,
+                callback_data=RegionSubscriptionsMenu(
+                    region="",
                     action=SubscriptionsMenuActions.DISABLE_ALL,
                 ).pack(),
             ),

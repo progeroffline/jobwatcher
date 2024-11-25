@@ -1,9 +1,9 @@
 from typing import Optional, Sequence, AsyncGenerator
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import selectinload
 from bot.database.models.job_vacancy_categories import JobVacancyCategory
-from bot.database.models.user import User
+from bot.database.models.user import User, UserRegionSubscription
 from bot.repositories.abstracts import BaseRepository
 
 
@@ -28,11 +28,19 @@ class UserRepository(BaseRepository):
         await self._session.commit()
         return user
 
-    async def get_subscriptions(self, user_id: int) -> Sequence[JobVacancyCategory]:
+    async def get_category_subscriptions(
+        self, user_id: int
+    ) -> Sequence[JobVacancyCategory]:
         user = await self.get_user_by_id(user_id)
         if user is None:
             return []
         return user.subscribed_categories
+
+    async def get_region_subscriptions(self, user_id: int) -> Sequence[str]:
+        user = await self.get_user_by_id(user_id)
+        if user is None:
+            return []
+        return sorted([record.region for record in user.subscribed_regions])
 
     async def enable_subscription_to_category(
         self,
@@ -66,6 +74,50 @@ class UserRepository(BaseRepository):
         else:
             user.subscribed_categories.remove(category)
 
+        await self._session.commit()
+
+    async def enable_subscription_to_region(
+        self,
+        user_id: int,
+        region: Optional[str] = None,
+        regions: Sequence[str] = [],
+    ) -> None:
+        user = await self.get_user_by_id(user_id)
+        if user is None:
+            return
+
+        if region is not None:
+            user.subscribed_regions.append(
+                UserRegionSubscription(user_id=user_id, region=region)
+            )
+        else:
+            for region in regions:
+                if region not in user.subscribed_categories:
+                    user.subscribed_regions.append(
+                        UserRegionSubscription(user_id=user_id, region=region)
+                    )
+        await self._session.commit()
+
+    async def disable_subscription_to_region(
+        self,
+        user_id: int,
+        region: Optional[str] = None,
+    ) -> None:
+        user = await self.get_user_by_id(user_id)
+        if user is None:
+            return
+
+        if region is None:
+            stmt = delete(UserRegionSubscription).where(
+                UserRegionSubscription.user_id == user_id
+            )
+            await self._session.execute(stmt)
+        else:
+            stmt = delete(UserRegionSubscription).where(
+                UserRegionSubscription.user_id == user_id,
+                UserRegionSubscription.region == region,
+            )
+            await self._session.execute(stmt)
         await self._session.commit()
 
     async def get_user_by_id(self, user_id: int) -> User | None:

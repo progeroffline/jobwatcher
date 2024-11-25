@@ -6,6 +6,11 @@ class UserMenu(CallbackData, prefix="user"):
     action: UserMenuActions
 
 
-class SubscriptionsMenu(CallbackData, prefix="subscriptions_menu"):
+class CategorySubscriptionsMenu(CallbackData, prefix="category_subscriptions_menu"):
     id: int
+    action: SubscriptionsMenuActions
+
+
+class RegionSubscriptionsMenu(CallbackData, prefix="region_subscriptions_menu"):
+    region: str
     action: SubscriptionsMenuActions

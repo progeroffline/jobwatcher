@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Integer, String, inspect
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from bot.database.abstracts import ModelPrettyPrint
-from bot.database.models.user import user_subscription_association
+from bot.database.models.user import user_category_subscription_association
 
 if TYPE_CHECKING:
     from .user import User
@@ -28,7 +28,7 @@ class JobVacancyCategory(ModelPrettyPrint):
 
     subscribed_users: Mapped[list["User"]] = relationship(
         "User",
-        secondary=user_subscription_association,
+        secondary=user_category_subscription_association,
         back_populates="subscribed_categories",
     )
 

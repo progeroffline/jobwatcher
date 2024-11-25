@@ -62,7 +62,14 @@ class JobVacancyRepository(BaseRepository):
         return result
 
     async def get_unique_regions(self) -> Sequence[str]:
-        stmt = select(distinct(JobVacancyLocation.country))
+        stmt = (
+            select(distinct(JobVacancyLocation.country))
+            .where(
+                JobVacancyLocation.country.isnot(None),
+                JobVacancyLocation.country != "",
+            )
+            .order_by(JobVacancyLocation.country)
+        )
         result = await self._session.execute(stmt)
         return result.scalars().all()
 
