@@ -64,54 +64,49 @@ class OlxParser:
     async def search(
         self,
         query: str = "",
+        query_en: str = "",
         page: int = 1,
         limit: int = 40,
     ) -> list[dict[str, str | int | list[dict[str, str]]]]:
         result = []
-        for category in self.categoires:
-            category["service_name"] = "olx"
-            category["service_id"] = str(category["id"])
-
-            response = await self.make_get_request(
-                url=OlxEndpoints.SEARCH,
-                params={
-                    "offset": limit * (page - 1),
-                    "limit": 40,
-                    "query": query,
-                    "category_id": category["id"],
-                    "currency": "UAH",
-                    "filter_refiners": "spell_checker",
-                    "suggest_filters": "true",
-                    "sl": "191507faee1xd5f31ca",
-                },
+        response = await self.make_get_request(
+            url=OlxEndpoints.SEARCH,
+            params={
+                "offset": limit * (page - 1),
+                "limit": 40,
+                "query": query,
+                "currency": "UAH",
+                "filter_refiners": "spell_checker",
+                "suggest_filters": "true",
+                "sl": "191507faee1xd5f31ca",
+            },
+        )
+        for vacancy in response["data"]:
+            salary = {"from": 0, "to": 0, "currency": "грн", "type": "month"}
+            for params in vacancy["params"]:
+                if params["key"] == "salary":
+                    salary = params["value"]
+            result.append(
+                {
+                    "id": "olx" + str(vacancy["id"]),
+                    "title": vacancy["title"],
+                    "company": "",
+                    "description": self.remove_supported_html_tags(
+                        vacancy["description"].strip()
+                    ),
+                    "min_salary": salary["from"],
+                    "max_salary": salary["to"],
+                    "salary_currency": salary["currency"],
+                    "salary_period": salary["type"],
+                    "url": vacancy["url"],
+                    "locations": [
+                        {
+                            "continent": "Europe",
+                            "country": "Ukraine",
+                            "city": vacancy["location"]["city"]["name"],
+                        }
+                    ],
+                }
             )
-            for vacancy in response["data"]:
-                salary = {"from": 0, "to": 0, "currency": "грн", "type": "month"}
-                for params in vacancy["params"]:
-                    if params["key"] == "salary":
-                        salary = params["value"]
-                result.append(
-                    {
-                        "id": "olx" + str(vacancy["id"]),
-                        "title": vacancy["title"],
-                        "company": "",
-                        "description": self.remove_supported_html_tags(
-                            vacancy["description"].strip()
-                        ),
-                        "min_salary": salary["from"],
-                        "max_salary": salary["to"],
-                        "salary_currency": salary["currency"],
-                        "salary_period": salary["type"],
-                        "url": vacancy["url"],
-                        "locations": [
-                            {
-                                "continent": "Europe",
-                                "country": "Ukraine",
-                                "city": vacancy["location"]["city"]["name"],
-                            }
-                        ],
-                        "category": category,
-                    }
-                )
 
         return result

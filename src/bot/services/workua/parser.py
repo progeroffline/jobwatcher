@@ -45,6 +45,9 @@ class WorkUAParser:
             {"id": 6792, "name": "Телекомунікації та зв'язок"},
         ]
 
+    async def get_categories(self) -> list[dict[str, int | str]]:
+        return self.categories
+
     def get_soup(self, html: str) -> BeautifulSoup:
         return BeautifulSoup(html, "html.parser")
 
@@ -61,60 +64,54 @@ class WorkUAParser:
     async def search(
         self,
         query: str = "",
+        query_en: str = "",
         page: int = 1,
     ) -> list[dict[str, str | int | list[dict[str, str]]]]:
         result = []
-        for category in self.categories:
-            category["service_name"] = "workua"
-            category["service_id"] = str(category["id"])
-            response = await self.make_get_request(
-                url=WorkUAEndpoints.SEARCH,
-                params={
-                    "page": page,
-                    "search": query,
-                    "category": category["id"],
-                },
+        response = await self.make_get_request(
+            url=WorkUAEndpoints.SEARCH,
+            params={
+                "page": page,
+                "search": query,
+            },
+        )
+        soup = self.get_soup(response)
+        vacancies_list = soup.select_one("div#pjax-jobs-list")
+        if vacancies_list is None or isinstance(vacancies_list, NavigableString):
+            return []
+
+        vacancies = vacancies_list.select("div.card")
+        for vacancy in vacancies:
+            span_strong = vacancy.select("span.strong-600")
+            min_salary, max_salary, salary_currency = (
+                (0, 0, "грн")
+                if len(span_strong) < 2
+                else extract_salary(span_strong[0].text)
             )
-            soup = self.get_soup(response)
-            vacancies_list = soup.select_one("div#pjax-jobs-list")
-            if vacancies_list is None or isinstance(vacancies_list, NavigableString):
-                continue
+            company = span_strong[-1].text if span_strong else ""
 
-            vacancies = vacancies_list.select("div.card")
-            for vacancy in vacancies:
-                span_strong = vacancy.select("span.strong-600")
-                min_salary, max_salary, salary_currency = (
-                    (0, 0, "грн")
-                    if len(span_strong) < 2
-                    else extract_salary(span_strong[0].text)
-                )
-                company = span_strong[-1].text if span_strong else ""
-
-                result.append(
-                    {
-                        "id": "workua"
-                        + str(vacancy.select_one("div.saved-jobs").get("data-id")),  # type: ignore
-                        "title": vacancy.select_one("h2").text.strip(),  # type: ignore
-                        "company": company,
-                        "description": " ".join(vacancy.select_one("p").text.split()),  # type: ignore
-                        "min_salary": min_salary,
-                        "max_salary": max_salary,
-                        "salary_currency": salary_currency,
-                        "salary_period": "month",
-                        "url": f"https://{self.domain}/jobs/{vacancy.select_one('div.saved-jobs').get('data-id')}",  # type: ignore
-                        "locations": [
-                            {
-                                "continent": "Europe",
-                                "country": "Ukraine",
-                                "city": vacancy.select(".card .mt-xs span[class='']")[
-                                    -1
-                                ]
-                                .text.replace(",", "")  # type: ignore
-                                .split("шукаємо у")[0],  # type: ignore
-                            }
-                        ],
-                        "category": category,
-                    }
-                )
+            result.append(
+                {
+                    "id": "workua"
+                    + str(vacancy.select_one("div.saved-jobs").get("data-id")),  # type: ignore
+                    "title": vacancy.select_one("h2").text.strip(),  # type: ignore
+                    "company": company,
+                    "description": " ".join(vacancy.select_one("p").text.split()),  # type: ignore
+                    "min_salary": min_salary,
+                    "max_salary": max_salary,
+                    "salary_currency": salary_currency,
+                    "salary_period": "month",
+                    "url": f"https://{self.domain}/jobs/{vacancy.select_one('div.saved-jobs').get('data-id')}",  # type: ignore
+                    "locations": [
+                        {
+                            "continent": "Europe",
+                            "country": "Ukraine",
+                            "city": vacancy.select(".card .mt-xs span[class='']")[-1]
+                            .text.replace(",", "")  # type: ignore
+                            .split("шукаємо у")[0],  # type: ignore
+                        }
+                    ],
+                }
+            )
 
         return result

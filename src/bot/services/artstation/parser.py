@@ -1,4 +1,3 @@
-import asyncio
 from typing import Any
 import httpx
 import bleach
@@ -50,62 +49,49 @@ class ArtStationParser:
         page: int = 1,
         size: int = 30,
         query: str = "",
-    ) -> list[dict[str, str | int | list[dict[str, str]]]]:
-        if len(self.categories) == 0:
-            self.categories = await self.get_categories()
+        query_en: str = "",
+    ) -> list[dict[str, str | int | list[dict[str, str]] | dict[str, str]]]:
+        response = await self.make_get_request(
+            url=ArtStationsEndpoints.SEARCH,
+            params={
+                "page": page,
+                "per_page": size,
+                "query": query_en,
+            },
+        )
 
-        result = []
-        for category in self.categories:
-            await asyncio.sleep(0.5)
-            response = await self.make_get_request(
-                url=ArtStationsEndpoints.SEARCH,
-                params={
-                    "page": page,
-                    "per_page": size,
-                    "query": query,
-                    "classification_ids[]": category["id"],
-                },
-            )
-
-            result.extend(
-                [
+        return [
+            {
+                "id": f"artstation_{vacancy['id']}",
+                "title": vacancy["title"],
+                "company": vacancy["company_name"],
+                "description": self.remove_supported_html_tags(vacancy["description"]),
+                "min_salary": (vacancy["salary_range"]["min_salary"] or 0)
+                if vacancy.get("salary_currency") is not None
+                else 0,
+                "max_salary": (vacancy["salary_range"]["max_salary"] or 0)
+                if vacancy.get("salary_range") is not None
+                else 0,
+                "salary_currency": (vacancy["salary_range"]["currency"] or "")
+                if vacancy.get("salary_range") is not None
+                else "",
+                "salary_period": (vacancy["salary_range"]["period"] or "")
+                if vacancy.get("salary_range") is not None
+                else "",
+                "url": f"https://{self.domain}/jobs/{vacancy['hash_id']}",
+                # "category": {
+                #     "name": query,
+                #     "name_en": query_en,
+                #     "service_name": "artstation",
+                # },
+                "locations": [
                     {
-                        "id": f"artstation_{vacancy['id']}",
-                        "title": vacancy["title"],
-                        "company": vacancy["company_name"],
-                        "description": self.remove_supported_html_tags(
-                            vacancy["description"]
-                        ),
-                        "min_salary": (vacancy["salary_range"]["min_salary"] or 0)
-                        if vacancy.get("salary_currency") is not None
-                        else 0,
-                        "max_salary": (vacancy["salary_range"]["max_salary"] or 0)
-                        if vacancy.get("salary_range") is not None
-                        else 0,
-                        "salary_currency": (vacancy["salary_range"]["currency"] or "")
-                        if vacancy.get("salary_range") is not None
-                        else "",
-                        "salary_period": (vacancy["salary_range"]["period"] or "")
-                        if vacancy.get("salary_range") is not None
-                        else "",
-                        "url": f"https://{self.domain}/jobs/{vacancy['hash_id']}",
-                        "category": {
-                            "id": str(category["id"]),
-                            "service_id": str(category["id"]),
-                            "name": category["name"],
-                            "service_name": "artstation",
-                        },
-                        "locations": [
-                            {
-                                "continent": location["locality"]["continent_name"]
-                                or "",
-                                "country": location["locality"]["country_name"] or "",
-                                "city": location["locality"]["city_name"] or "",
-                            }
-                            for location in vacancy["recruitment_localities"]
-                        ],
+                        "continent": location["locality"]["continent_name"] or "",
+                        "country": location["locality"]["country_name"] or "",
+                        "city": location["locality"]["city_name"] or "",
                     }
-                    for vacancy in response["data"]
-                ]
-            )
-        return result
+                    for location in vacancy["recruitment_localities"]
+                ],
+            }
+            for vacancy in response["data"]
+        ]

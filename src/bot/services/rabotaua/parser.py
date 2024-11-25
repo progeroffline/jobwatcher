@@ -1,4 +1,3 @@
-import re
 from typing import Any
 import httpx
 from .endpoints import RabotaUAEndpoints
@@ -52,83 +51,70 @@ class RabotaUAParser:
     async def search(
         self,
         query: str = "",
+        query_en: str = "",
         page: int = 1,
-    ) -> list[dict[str, str | int | list[dict[str, str]]]]:
-        if len(self.categories) == 0:
-            self.categories = await self.get_categories()
-
-        result = []
-        for category in self.categories:
-            response = await self.make_post_request(
-                url=RabotaUAEndpoints.SEARCH,
-                params={"q": "getPublishedVacanciesList"},
-                json={
-                    "operationName": "getPublishedVacanciesList",
-                    "variables": {
-                        "pagination": {
-                            "count": 20,
-                            "page": page,
-                        },
-                        "filter": {
-                            "keywords": query,
-                            "clusterKeywords": [],
-                            "location": {
-                                "longitude": 0,
-                                "latitude": 0,
-                            },
-                            "salary": 0,
-                            "districtIds": [],
-                            "scheduleIds": [],
-                            "rubrics": [{"id": category["id"], "subrubricIds": []}],
-                            "metroBranches": [],
-                            "showAgencies": True,
-                            "showOnlyNoCvApplyVacancies": False,
-                            "showOnlySpecialNeeds": False,
-                            "showOnlyWithoutExperience": False,
-                            "showOnlyNotViewed": False,
-                            "showWithoutSalary": True,
-                            "showMilitary": True,
-                            "isReservation": False,
-                            "isForVeterans": False,
-                            "isOfficeWithGenerator": False,
-                            "isOfficeWithShelter": False,
-                        },
-                        "sort": "BY_BUSINESS_SCORE",
-                        "isBrowser": True,
+    ) -> list[dict[str, str | int | list[dict[str, str]] | dict[str, str]]]:
+        response = await self.make_post_request(
+            url=RabotaUAEndpoints.SEARCH,
+            params={"q": "getPublishedVacanciesList"},
+            json={
+                "operationName": "getPublishedVacanciesList",
+                "variables": {
+                    "pagination": {
+                        "count": 20,
+                        "page": 0,
                     },
-                    "query": "query getPublishedVacanciesList($filter: PublishedVacanciesFilterInput!, $pagination: PublishedVacanciesPaginationInput!, $sort: PublishedVacanciesSortType!, $isBrowser: Boolean!) {\n  publishedVacancies(filter: $filter, pagination: $pagination, sort: $sort) {\n    totalCount\n    items {\n      ...PublishedVacanciesItem\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment PublishedVacanciesItem on Vacancy {\n  id\n  schedules {\n    id\n    __typename\n  }\n  title\n  distanceText\n  description\n  sortDateText\n  hot\n  designBannerUrl\n  isPublicationInAllCities\n  badges {\n    name\n    __typename\n  }\n  salary {\n    amount\n    comment\n    amountFrom\n    amountTo\n    __typename\n  }\n  company {\n    id\n    logoUrl\n    name\n    honors {\n      badge {\n        iconUrl\n        tooltipDescription\n        locations\n        isFavorite\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  city {\n    id\n    name\n    __typename\n  }\n  showProfile\n  seekerFavorite @include(if: $isBrowser) {\n    isFavorite\n    __typename\n  }\n  seekerDisliked @include(if: $isBrowser) {\n    isDisliked\n    __typename\n  }\n  formApplyCustomUrl\n  anonymous\n  isActive\n  publicationType\n  __typename\n}\n",
+                    "filter": {
+                        "keywords": query,
+                        "clusterKeywords": [],
+                        "location": {
+                            "longitude": 0,
+                            "latitude": 0,
+                        },
+                        "salary": 0,
+                        "districtIds": [],
+                        "scheduleIds": [],
+                        "rubrics": [],
+                        "metroBranches": [],
+                        "showAgencies": True,
+                        "showOnlyNoCvApplyVacancies": False,
+                        "showOnlySpecialNeeds": False,
+                        "showOnlyWithoutExperience": False,
+                        "showOnlyNotViewed": False,
+                        "showWithoutSalary": True,
+                        "showMilitary": True,
+                        "isReservation": False,
+                        "isForVeterans": False,
+                        "isOfficeWithGenerator": False,
+                        "isOfficeWithShelter": False,
+                    },
+                    "sort": "BY_BUSINESS_SCORE",
+                    "isBrowser": True,
                 },
-            )
+                "query": "query getPublishedVacanciesList($filter: PublishedVacanciesFilterInput!, $pagination: PublishedVacanciesPaginationInput!, $sort: PublishedVacanciesSortType!, $isBrowser: Boolean!) {\n  publishedVacancies(filter: $filter, pagination: $pagination, sort: $sort) {\n    totalCount\n    items {\n      ...PublishedVacanciesItem\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment PublishedVacanciesItem on Vacancy {\n  id\n  schedules {\n    id\n    __typename\n  }\n  title\n  distanceText\n  description\n  sortDateText\n  hot\n  designBannerUrl\n  isPublicationInAllCities\n  badges {\n    name\n    __typename\n  }\n  salary {\n    amount\n    comment\n    amountFrom\n    amountTo\n    __typename\n  }\n  company {\n    id\n    logoUrl\n    name\n    honors {\n      badge {\n        iconUrl\n        tooltipDescription\n        locations\n        isFavorite\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  city {\n    id\n    name\n    __typename\n  }\n  showProfile\n  seekerFavorite @include(if: $isBrowser) {\n    isFavorite\n    __typename\n  }\n  seekerDisliked @include(if: $isBrowser) {\n    isDisliked\n    __typename\n  }\n  formApplyCustomUrl\n  anonymous\n  isActive\n  publicationType\n  __typename\n}\n",
+            },
+        )
 
-            if response["data"].get("publishedVacancies") is None:
-                continue
-
-            result.extend(
-                [
+        return [
+            {
+                "id": "rabotaua" + str(vacancy["id"]),
+                "title": vacancy["title"],
+                "company": vacancy["company"]["name"]
+                if vacancy["company"] is not None
+                else "Анонiмна компанiя",
+                "description": vacancy["description"].strip().replace("\xa0", ""),
+                "min_salary": vacancy["salary"]["amountFrom"],
+                "max_salary": vacancy["salary"]["amountFrom"],
+                "salary_currency": "грн",
+                "salary_period": "month",
+                "url": f"https://{self.domain}/company{vacancy['company']['id'] if vacancy['company'] is not None else 0}/vacancy{vacancy['id']}",
+                "locations": [
                     {
-                        "id": "rabotaua" + str(vacancy["id"]),
-                        "title": vacancy["title"],
-                        "company": vacancy["company"]["name"]
-                        if vacancy["company"] is not None
-                        else "Анонiмна компанiя",
-                        "description": vacancy["description"]
-                        .strip()
-                        .replace("\xa0", ""),
-                        "min_salary": vacancy["salary"]["amountFrom"],
-                        "max_salary": vacancy["salary"]["amountFrom"],
-                        "salary_currency": "грн",
-                        "salary_period": "month",
-                        "url": f"https://{self.domain}/company{vacancy['company']['id'] if vacancy['company'] is not None else 0}/vacancy{vacancy['id']}",
-                        "locations": [
-                            {
-                                "continent": "Europe",
-                                "country": "Ukraine",
-                                "city": vacancy["city"]["name"].split(",")[0],
-                            }
-                        ],
-                        "category": category,
+                        "continent": "Europe",
+                        "country": "Ukraine",
+                        "city": vacancy["city"]["name"].split(",")[0],
                     }
-                    for vacancy in response["data"]["publishedVacancies"]["items"]
-                ]
-            )
-        return result
+                ],
+            }
+            for vacancy in response["data"]["publishedVacancies"]["items"]
+        ]

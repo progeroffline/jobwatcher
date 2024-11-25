@@ -64,26 +64,20 @@ class JobVacancyRepository(BaseRepository):
     async def create(
         self,
         id: str,
+        category_id: int,
         locations: list[dict[str, str]],
-        category: dict[str, str | int],
         **kwargs,
     ) -> JobVacancy:
         locations = [await self.get_location(**location) for location in locations]
-        db_category = await self.get_category(name=category["name"])  # type: ignore
-        await self.get_service_id(
-            service_name=category["service_name"],
-            service_id=category["service_id"],
-            category_id=db_category.id,
-        )
-
         job_vacancy = await self.get(id=id)
+
         if job_vacancy is not None:
             return job_vacancy  # Return value if it exists in db
 
         job_vacancy = JobVacancy(
             id=id,
             locations=locations,
-            category_id=db_category.id,
+            category_id=category_id,
             **kwargs,
         )
         self._session.add(job_vacancy)

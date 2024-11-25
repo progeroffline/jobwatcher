@@ -54,69 +54,64 @@ class JobsUAParser:
     async def search(
         self,
         query: str = "",
+        query_en: str = "",
         page: int = 1,
     ) -> list[dict[str, str | int | list[dict[str, str]]]]:
-        if len(self.categories) == 0:
-            self.categories = await self.get_categories()
+        response = await self.make_get_request(
+            url=f"{JobsUAEndpoints.SEARCH}-{query}",
+        )
+        soup = self.get_soup(response)
+        vacancies_list = soup.select_one("ul.b-vacancy__list")
+        if vacancies_list is None or isinstance(vacancies_list, NavigableString):
+            return []
 
+        vacancies = vacancies_list.select("li.b-vacancy__item")
         result = []
-        for category in self.categories:
-            response = await self.make_get_request(
-                url=f"{JobsUAEndpoints.BY_CATEGORY}{category['id']}/page-{page}",
-            )
-            soup = self.get_soup(response)
-            vacancies_list = soup.select_one("ul.b-vacancy__list")
-            if vacancies_list is None or isinstance(vacancies_list, NavigableString):
+        for vacancy in vacancies:
+            title_tag = vacancy.select_one("a.b-vacancy__top__title")
+            if title_tag is None:
                 continue
 
-            vacancies = vacancies_list.select("li.b-vacancy__item")
+            vacancy_id = vacancy.get("id")
+            title = title_tag.get("title", "")
+            company = vacancy.select_one("span.b-vacancy__tech__item span").get(  # type: ignore
+                "title", ""
+            )
+            salary_tag = vacancy.select_one("span.b-vacancy__top__pay")
+            max_salary = (
+                int(parse_price(salary_tag.text).amount) if salary_tag else 0  # type: ignore
+            )
+            salary_currency = (
+                salary_tag.select_one("i").text.replace(".", "")  # type: ignore
+                if salary_tag
+                else ""
+            )
+            url = title_tag.get("href", "")
+            locations = [
+                {
+                    "continent": "Europe",
+                    "country": "Ukraine",
+                    "city": vacancy.select_one(
+                        ".b-vacancy__tech .b-vacancy__tech__item a"
+                    )
+                    .text.split("(")[0]  # type: ignore
+                    .strip(),
+                }
+            ]
 
-            for vacancy in vacancies:
-                title_tag = vacancy.select_one("a.b-vacancy__top__title")
-                if title_tag is None:
-                    continue
-
-                vacancy_id = vacancy.get("id")
-                title = title_tag.get("title", "")
-                company = vacancy.select_one("span.b-vacancy__tech__item span").get(  # type: ignore
-                    "title", ""
-                )
-                salary_tag = vacancy.select_one("span.b-vacancy__top__pay")
-                max_salary = (
-                    int(parse_price(salary_tag.text).amount) if salary_tag else 0  # type: ignore
-                )
-                salary_currency = (
-                    salary_tag.select_one("i").text.replace(".", "")  # type: ignore
-                    if salary_tag
-                    else ""
-                )
-                url = title_tag.get("href", "")
-                locations = [
-                    {
-                        "continent": "Europe",
-                        "country": "Ukraine",
-                        "city": vacancy.select_one(
-                            ".b-vacancy__tech .b-vacancy__tech__item a"
-                        )
-                        .text.split("(")[0]  # type: ignore
-                        .strip(),
-                    }
-                ]
-
-                result.append(
-                    {
-                        "id": "jobsua" + str(vacancy_id),
-                        "title": title,
-                        "company": company,
-                        "description": "",
-                        "min_salary": 0,
-                        "max_salary": max_salary,
-                        "salary_currency": salary_currency,
-                        "salary_period": "month",
-                        "url": url,
-                        "locations": locations,
-                        "category": category,
-                    }
-                )
+            result.append(
+                {
+                    "id": "jobsua" + str(vacancy_id),
+                    "title": title,
+                    "company": company,
+                    "description": "",
+                    "min_salary": 0,
+                    "max_salary": max_salary,
+                    "salary_currency": salary_currency,
+                    "salary_period": "month",
+                    "url": url,
+                    "locations": locations,
+                }
+            )
 
         return result
