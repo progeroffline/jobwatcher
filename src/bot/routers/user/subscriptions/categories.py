@@ -16,7 +16,7 @@ router = Router(name="by_categories")
 @router.callback_query(
     UserMenu.filter(F.action == UserMenuActions.SUBSCRIPTIONS_BY_CATEGORY)
 )
-async def subscriptions_menu(
+async def categories_menu(
     call: CallbackQuery,
     user_repository: UserRepository,
     job_vacancy_repository: JobVacancyRepository,
@@ -25,7 +25,7 @@ async def subscriptions_menu(
     if call.message is None or isinstance(call.message, InaccessibleMessage):
         return await call.answer()
     logger.info(
-        "User opened subscriptions menu, "
+        "User opened categories menu, "
         f"User ID: {call.from_user.id}, "  # type: ignore
         f"Username: {call.from_user.username}, "  # type: ignore
         f"Chat ID: {call.message.chat.id}, "
@@ -36,7 +36,7 @@ async def subscriptions_menu(
     subscriptions = await user_repository.get_subscriptions(call.from_user.id)
     await call.message.edit_text(
         i18n.get("subscriptions_menu"),
-        reply_markup=inline_keyboards.subscriptions_menu(categories, subscriptions),
+        reply_markup=inline_keyboards.categories_menu(categories, subscriptions),
     )
 
 
@@ -84,7 +84,7 @@ async def enable_user_subscription_to_category(
     try:
         await call.message.edit_text(
             i18n.get("subscriptions_menu"),
-            reply_markup=inline_keyboards.subscriptions_menu(categories, subscriptions),
+            reply_markup=inline_keyboards.categories_menu(categories, subscriptions),
         )
     except TelegramBadRequest:
         await call.answer()

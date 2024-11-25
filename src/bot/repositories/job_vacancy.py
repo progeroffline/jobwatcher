@@ -1,5 +1,5 @@
 from typing import Sequence
-from sqlalchemy import select, update
+from sqlalchemy import distinct, select, update
 from bot.database.models.job_vacancy import JobVacancy
 from bot.database.models.job_vacancy_location import JobVacancyLocation
 from bot.database.models.job_vacancy_categories import JobVacancyCategory
@@ -60,6 +60,11 @@ class JobVacancyRepository(BaseRepository):
         if result is None:
             return await self.create_location(**kwargs)
         return result
+
+    async def get_unique_regions(self) -> Sequence[str]:
+        stmt = select(distinct(JobVacancyLocation.country))
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
 
     async def create(
         self,

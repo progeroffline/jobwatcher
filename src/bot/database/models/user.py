@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from .job_vacancy_categories import JobVacancyCategory
 
 user_subscription_association = Table(
-    "user_subscriptions",
+    "user_category_subscriptions",
     Base.metadata,
     Column("user_id", ForeignKey("users.id"), primary_key=True),
     Column("category_id", ForeignKey("job_vacancy_categories.id"), primary_key=True),

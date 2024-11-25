@@ -28,6 +28,14 @@ def menu() -> InlineKeyboardMarkup:
                     ).pack(),
                 ),
             ],
+            [
+                InlineKeyboardButton(
+                    text=LazyProxy("subscriptions_by_region"),
+                    callback_data=UserMenu(
+                        action=UserMenuActions.SUBSCRIPTIONS_BY_REGION,
+                    ).pack(),
+                ),
+            ],
         ],
     )
 
@@ -47,13 +55,74 @@ def back_to_user_menu() -> InlineKeyboardMarkup:
     )
 
 
-def subscriptions_menu(
+def categories_menu(
     categories: Sequence[JobVacancyCategory],
     subscriptions: Sequence[JobVacancyCategory],
 ) -> InlineKeyboardMarkup:
     inline_keyboard = []
 
     for pair in zip_longest(*[iter(categories)] * 2):
+        inline_keyboard.append(
+            [
+                InlineKeyboardButton(
+                    text=(
+                        f"{settings.selected_category_char} {cat.name}"
+                        if cat in subscriptions
+                        else cat.name
+                    ),
+                    callback_data=SubscriptionsMenu(
+                        id=cat.id,
+                        action=(
+                            SubscriptionsMenuActions.DISABLE
+                            if cat in subscriptions
+                            else SubscriptionsMenuActions.ENABLE
+                        ),
+                    ).pack(),
+                )
+                for cat in pair
+                if cat is not None
+            ]
+        )
+
+    inline_keyboard.append(
+        [
+            InlineKeyboardButton(
+                text=LazyProxy("subscriptions_enable_all"),
+                callback_data=SubscriptionsMenu(
+                    id=1,
+                    action=SubscriptionsMenuActions.ENABLE_ALL,
+                ).pack(),
+            ),
+            InlineKeyboardButton(
+                text=LazyProxy("subscriptions_disable_all"),
+                callback_data=SubscriptionsMenu(
+                    id=1,
+                    action=SubscriptionsMenuActions.DISABLE_ALL,
+                ).pack(),
+            ),
+        ],
+    )
+    inline_keyboard.append(
+        [
+            InlineKeyboardButton(
+                text=LazyProxy("back_to_user_menu"),
+                callback_data=UserMenu(
+                    action=UserMenuActions.BACK_TO_MENU,
+                ).pack(),
+            ),
+        ],
+    )
+
+    return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+
+
+def regions_menu(
+    regions: Sequence[str],
+    subscriptions: Sequence[JobVacancyCategory],
+) -> InlineKeyboardMarkup:
+    inline_keyboard = []
+
+    for pair in zip_longest(*[iter(regions)] * 2):
         inline_keyboard.append(
             [
                 InlineKeyboardButton(
