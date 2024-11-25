@@ -10,7 +10,7 @@ from bot.dependencies import logger
 from aiogram.exceptions import TelegramBadRequest
 
 
-router = Router(name="subscriptions")
+router = Router(name="by_categories")
 
 
 @router.callback_query(

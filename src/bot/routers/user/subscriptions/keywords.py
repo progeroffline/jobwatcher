@@ -11,7 +11,7 @@ from bot.repositories.user import UserRepository
 from bot.dependencies import logger
 
 
-router = Router(name="search_by_keyword")
+router = Router(name="by_keyword")
 
 
 class LocalStates(StatesGroup):
