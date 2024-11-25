@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 import httpx
 import bleach
@@ -31,7 +32,12 @@ class ArtStationParser:
         url: str,
         params: dict[str, str | int] = {},
     ) -> dict[str, Any]:
-        response = await self.client.get(url, params=params)
+        try:
+            response = await self.client.get(url, params=params)
+        except (httpx.ReadTimeout, httpx.ConnectTimeout):
+            await asyncio.sleep(5)
+            return await self.make_get_request(url, params)
+
         if response.status_code == 200:
             return response.json()
         return {}
@@ -50,7 +56,7 @@ class ArtStationParser:
         size: int = 30,
         query: str = "",
         query_en: str = "",
-    ) -> list[dict[str, str | int | list[dict[str, str]] | dict[str, str]]]:
+    ) -> list[dict[str, str | int | list[dict[str, str]] | dict[str, str] | list[int]]]:
         response = await self.make_get_request(
             url=ArtStationsEndpoints.SEARCH,
             params={

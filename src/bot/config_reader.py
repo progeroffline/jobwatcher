@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     )
 
     noitify_users_about_new_vacancies: bool = True
+    vacancy_description_max_preview_chars: int = 250
     selected_category_char: str = "✅"
 
     class Config:

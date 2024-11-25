@@ -28,9 +28,10 @@ class User(ModelPrettyPrint, AuditMixin):
     name: Mapped[str] = mapped_column(String, default="")
     username: Mapped[str] = mapped_column(String, default="")
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
-    keyword: Mapped[str] = mapped_column(String, default="", nullable=True)
+    subscribed_keyword: Mapped[str] = mapped_column(String, default="", nullable=True)
     subscribed_categories: Mapped[list["JobVacancyCategory"]] = relationship(
         "JobVacancyCategory",
+        lazy="selectin",
         secondary=user_category_subscription_association,
         back_populates="subscribed_users",
     )

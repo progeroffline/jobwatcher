@@ -125,7 +125,6 @@ def regions_menu(
     subscriptions: Sequence[str],
 ) -> InlineKeyboardMarkup:
     inline_keyboard = []
-    print(regions, subscriptions)
 
     for pair in zip_longest(*[iter(regions)] * 2):
         inline_keyboard.append(

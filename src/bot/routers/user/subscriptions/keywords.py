@@ -46,8 +46,8 @@ async def enter_keyword(
         i18n.get(
             "enter_keyword",
             keyword="Пусто"
-            if user.keyword is None or len(user.keyword) == 0
-            else user.keyword,
+            if user.subscribed_keyword is None or len(user.subscribed_keyword) == 0
+            else user.subscribed_keyword,
         ),
         reply_markup=inline_keyboards.back_to_user_menu(),
     )
@@ -67,7 +67,7 @@ async def save_user_keyword(
         f"Chat ID: {message.chat.id}, "
         f"Message: {message.text}"
     )
-    await user_repository.update(message.from_user.id, keyword=message.text)  # type: ignore
+    await user_repository.update(message.from_user.id, subscribed_keyword=message.text)  # type: ignore
     await message.answer(
         i18n.get("save_user_keyword"),
         reply_markup=inline_keyboards.menu(),

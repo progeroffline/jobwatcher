@@ -38,6 +38,37 @@ class NewJobsNotifications:
             "workua": False,
         }
 
+    @staticmethod
+    def user_subscribed_to_vacancy(
+        vacancy_category: list[str],
+        vacancy_keywords: list[str],
+        vacancy_region: list[str],
+        categories: list[str],
+        keywords: list[str],
+        regions: list[str],
+    ) -> bool:
+        if not vacancy_category or not vacancy_region:
+            return False
+
+        vacancy_category_set = set(vacancy_category)
+        vacancy_keywords_set = set([item.lower() for item in vacancy_keywords if item])
+        vacancy_region_set = set(vacancy_region)
+
+        selected_categories = set(categories)
+        selected_keywords = set([item.lower() for item in keywords if item])
+        selected_regions = set(regions)
+
+        matches_category = (
+            not selected_categories
+        ) or vacancy_category_set.intersection(selected_categories)
+        matches_keywords = not selected_keywords or vacancy_keywords_set.intersection(
+            selected_keywords
+        )
+        matches_region = not selected_regions or vacancy_region_set.intersection(
+            selected_regions
+        )
+        return bool(matches_category and matches_keywords and matches_region)
+
     async def send_notification(
         self,
         bot: Bot,
@@ -56,15 +87,16 @@ class NewJobsNotifications:
                 f"<b>🏢 Компания:</b> {vacancy['company']}\n",
                 f"<b>💰 Зарплата</b>: {salary}\n",
                 f"<b>📅 Период:</b> {vacancy['salary_period']}\n",
-                f"<b>📍 Категория:</b> {vacancy['category']['name']}\n",  # type: ignore
+                f"<b>📍 Категория:</b> {vacancy['category_name']}\n",  # type: ignore
                 f"<b>🌐 Локация:</b> {','.join([location['city'] for location in vacancy['locations']])}\n\n",  # type: ignore
-                f"<b>📄 Описание:</b> {vacancy['description']}\n",
+                f"<b>📄 Описание:</b> {str(vacancy['description'])[:settings.vacancy_description_max_preview_chars]}...\n",
             ]
         )
         try:
             await bot.send_message(
                 chat_id=user_id,
                 text=message,
+                disable_web_page_preview=True,
                 reply_markup=InlineKeyboardMarkup(
                     inline_keyboard=[
                         [
@@ -99,11 +131,14 @@ class NewJobsNotifications:
                 logger.debug(f"Remove vacancy from queue {vacancy['id']}")
                 notifications_queue.task_done()
 
-                logger.debug(f"Get sub category service id where {vacancy['category']}")
-                category = await job_vacancy_repository.get_category_by_service_id(
-                    vacancy["category"]["service_id"],
-                    vacancy["category"]["service_name"],
+                if not settings.noitify_users_about_new_vacancies:
+                    continue
+
+                category = await job_vacancy_repository.get_category(
+                    id=vacancy["category_id"],
                 )
+                logger.debug(f"Get vacancy category by id {category.id}")
+
                 # if not all(self.service_launched.values()):
                 #     logger.debug(
                 #         f"Skip sending notification cause not all services lauched {self.service_launched}"
@@ -111,16 +146,23 @@ class NewJobsNotifications:
                 #     continue
 
                 async for user in user_repository.get_all(category_id=category.id):
-                    if settings.noitify_users_about_new_vacancies:
+                    if self.user_subscribed_to_vacancy(
+                        vacancy_category=[category.name],
+                        vacancy_keywords=vacancy["title"].split(),
+                        vacancy_region=[
+                            location["country"] for location in vacancy["locations"]
+                        ],
+                        categories=[
+                            category.name for category in user.subscribed_categories
+                        ],
+                        keywords=(
+                            keywords.split(",")
+                            if (keywords := user.subscribed_keyword) is not None
+                            else []
+                        ),
+                        regions=[region.region for region in user.subscribed_regions],
+                    ):
                         await self.send_notification(bot, user.id, vacancy)
-
-                async for user in user_repository.get_all():
-                    if user.keyword is None or len(user.keyword) == 0:
-                        continue
-                    if settings.noitify_users_about_new_vacancies:
-                        for key in user.keyword.split(","):
-                            if key.lower() in vacancy["title"].lower():
-                                await self.send_notification(bot, user.id, vacancy)
 
     async def make_post_to_channel(self, bot: Bot) -> None:
         logger.debug("Send notifications about new job to channels")

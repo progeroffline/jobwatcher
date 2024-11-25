@@ -1,3 +1,4 @@
+import asyncio
 import re
 import httpx
 from bs4 import BeautifulSoup
@@ -25,7 +26,12 @@ class BelmetaParser:
         url: str,
         params: dict[str, str | int] = {},
     ) -> str:
-        response = await self.client.get(url, params=params)
+        try:
+            response = await self.client.get(url, params=params)
+        except (httpx.ReadTimeout, httpx.ConnectTimeout):
+            await asyncio.sleep(5)
+            return await self.make_get_request(url, params)
+
         if response.status_code == 200:
             return response.text
         return ""
