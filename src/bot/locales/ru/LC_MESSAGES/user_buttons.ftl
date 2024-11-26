@@ -6,4 +6,6 @@ subscriptions_enable_all = ✅ Выбрать все
 
 subscriptions_disable_all = ❌ Отменить все
 
+
+erase_keywords = 🚫 Очистить
 back_to_user_menu = 🔙 Назад

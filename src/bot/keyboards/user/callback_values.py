@@ -13,3 +13,4 @@ class SubscriptionsMenuActions(StrEnum):
     DISABLE = "disable"
     ENABLE_ALL = "enable_all"
     DISABLE_ALL = "disable_all"
+    ERASE = "earse"

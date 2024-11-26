@@ -14,3 +14,7 @@ class CategorySubscriptionsMenu(CallbackData, prefix="category_subscriptions_men
 class RegionSubscriptionsMenu(CallbackData, prefix="region_subscriptions_menu"):
     region: str
     action: SubscriptionsMenuActions
+
+
+class KeywordsSubscriptionsMenu(CallbackData, prefix="keywords_subscriptions_menu"):
+    action: str

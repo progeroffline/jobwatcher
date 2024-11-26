@@ -4,8 +4,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InaccessibleMessage, Message
 from aiogram_i18n import I18nContext
 
-from bot.keyboards.user.callback_types import UserMenu
-from bot.keyboards.user.callback_values import UserMenuActions
+from bot.keyboards.user.callback_types import KeywordsSubscriptionsMenu, UserMenu
+from bot.keyboards.user.callback_values import SubscriptionsMenuActions, UserMenuActions
 from bot.keyboards.user import inline_keyboards
 from bot.repositories.user import UserRepository
 from bot.dependencies import logger
@@ -53,6 +53,32 @@ async def enter_keyword(
     )
 
 
+@router.callback_query(
+    KeywordsSubscriptionsMenu.filter(F.action == SubscriptionsMenuActions.ERASE)
+)
+async def erase_keywords(
+    call: CallbackQuery,
+    i18n: I18nContext,
+    user_repository: UserRepository,
+):
+    if call.message is None or isinstance(call.message, InaccessibleMessage):
+        return await call.answer()
+
+    logger.info(
+        "User erase keywords menu, "
+        f"User ID: {call.from_user.id}, "  # type: ignore
+        f"Username: {call.from_user.username}, "  # type: ignore
+        f"Chat ID: {call.message.chat.id}, "
+        f"Callback data: {call.data}"
+    )
+
+    await user_repository.update(user_id=call.from_user.id, subscribed_keyword="")
+    await call.message.edit_text(
+        i18n.get("keyword_erased"),
+        reply_markup=inline_keyboards.back_to_user_menu(),
+    )
+
+
 @router.message(LocalStates.enter_keyword)
 async def save_user_keyword(
     message: Message,
@@ -72,4 +98,5 @@ async def save_user_keyword(
         i18n.get("save_user_keyword"),
         reply_markup=inline_keyboards.menu(),
     )
+
     await state.clear()

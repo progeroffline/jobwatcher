@@ -5,6 +5,7 @@ from aiogram_i18n.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.keyboards.user.callback_types import (
     CategorySubscriptionsMenu,
+    KeywordsSubscriptionsMenu,
     RegionSubscriptionsMenu,
     UserMenu,
 )
@@ -47,6 +48,14 @@ def menu() -> InlineKeyboardMarkup:
 def back_to_user_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=LazyProxy("erase_keywords"),
+                    callback_data=KeywordsSubscriptionsMenu(
+                        action=SubscriptionsMenuActions.ERASE,
+                    ).pack(),
+                ),
+            ],
             [
                 InlineKeyboardButton(
                     text=LazyProxy("back_to_user_menu"),
